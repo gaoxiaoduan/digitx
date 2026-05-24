@@ -1,0 +1,18 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local database file (highly critical to ignore so users' local progress is preserved and not overwritten)
+domains_db.json
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log

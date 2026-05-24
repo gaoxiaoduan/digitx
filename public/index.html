@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIGITX - Premium Numerical Domain Finder & Turbo Validator</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="cyber-bg"></div>
+    <div class="app-container">
+        <!-- 头部 -->
+        <header class="app-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="logo-area">
+                    <i class="fa-solid fa-satellite-dish neon-pulse-cyan"></i>
+                    <h1>DIGIT<span>X</span></h1>
+                </div>
+                <div class="app-title-tag" id="app-title-tag">
+                    <span class="pulse-dot green"></span> 极速双通道域名搜索引擎
+                </div>
+            </div>
+            <!-- 双语切换器 -->
+            <div class="lang-switch-container" style="display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); padding: 4px 6px; border-radius: 20px;">
+                <button id="btn-lang-zh" class="lang-btn active" style="background: rgba(0, 255, 240, 0.15); border: none; color: var(--neon-cyan); padding: 4px 12px; border-radius: 12px; cursor: pointer; font-size: 0.75rem; font-family: var(--font-body); font-weight: 600; transition: all 0.3s ease;">中文</button>
+                <button id="btn-lang-en" class="lang-btn" style="background: transparent; border: none; color: var(--text-muted); padding: 4px 12px; border-radius: 12px; cursor: pointer; font-size: 0.75rem; font-family: var(--font-body); font-weight: 600; transition: all 0.3s ease;">EN</button>
+            </div>
+        </header>
+
+        <!-- 数据大屏卡片 -->
+        <section class="stats-panel">
+            <div class="stat-card blue-glow" id="stat-total-card">
+                <div class="stat-icon"><i class="fa-solid fa-list-ol"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label" id="lbl-stat-total">合成候选总数</span>
+                    <h2 id="stat-total">0</h2>
+                </div>
+            </div>
+            <div class="stat-card purple-glow" id="stat-unchecked-card">
+                <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label" id="lbl-stat-unchecked">剩余待检测</span>
+                    <h2 id="stat-unchecked">0</h2>
+                </div>
+            </div>
+            <div class="stat-card green-glow pulse-border" id="stat-available-card">
+                <div class="stat-icon"><i class="fa-solid fa-award"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label" id="lbl-stat-available">未注册 (可用)</span>
+                    <h2 id="stat-available">0</h2>
+                </div>
+            </div>
+            <div class="stat-card red-glow" id="stat-registered-card">
+                <div class="stat-icon"><i class="fa-solid fa-ban"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label" id="lbl-stat-registered">已被占用 (已注册)</span>
+                    <h2 id="stat-registered">0</h2>
+                </div>
+            </div>
+        </section>
+
+        <!-- 控制面板 -->
+        <section class="controls-panel glassy">
+            <div class="panel-section scanner-actions">
+                <button id="btn-start" class="btn btn-primary btn-glow-green">
+                    <i class="fa-solid fa-play"></i> <span id="lbl-btn-start">启动极速扫描</span>
+                </button>
+                <button id="btn-pause" class="btn btn-secondary btn-glow-red" disabled>
+                    <i class="fa-solid fa-pause"></i> <span id="lbl-btn-pause">暂停扫描</span>
+                </button>
+            </div>
+
+            <div class="panel-section scanner-config">
+                <div class="config-item">
+                    <label for="cfg-delay" id="lbl-cfg-delay">WHOIS 核对延时 (ms)</label>
+                    <div class="range-display">
+                        <input type="range" id="cfg-delay" min="1000" max="10000" step="500" value="2000">
+                        <span id="delay-val">2000 毫秒</span>
+                    </div>
+                </div>
+                <div class="config-item" id="tld-select-container">
+                    <label for="cfg-tld-select" id="lbl-cfg-tld-select">域名后缀</label>
+                    <div class="tld-flex-container" style="display: flex; gap: 8px;">
+                        <select id="cfg-tld-select" style="background: var(--bg-card); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px; border-radius: 6px; outline: none; cursor: pointer; height: 35px; width: 90px; margin-top: 5px;">
+                            <option value=".xyz">.xyz</option>
+                            <option value=".com">.com</option>
+                            <option value=".net">.net</option>
+                            <option value=".org">.org</option>
+                            <option value=".cc">.cc</option>
+                            <option value="custom" id="opt-cfg-tld-custom">自定义</option>
+                        </select>
+                        <input type="text" id="cfg-tld-custom" placeholder="例如 .top" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px; border-radius: 6px; outline: none; height: 35px; width: 90px; margin-top: 5px; font-family: var(--font-mono); display: none;">
+                    </div>
+                </div>
+                <div class="config-item checkbox-item">
+                    <label class="switch">
+                        <input type="checkbox" id="cfg-exclude4" checked>
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="checkbox-label" id="lbl-cfg-exclude4">智能避讳数字 "4" <i class="fa-solid fa-circle-info" id="tip-cfg-exclude4" title="全局自动剔除含 4 的平庸数字，但非常智能地保留 1024、404 等程序员专属经典组合"></i></span>
+                </div>
+                <button id="btn-regenerate" class="btn btn-tertiary">
+                    <i class="fa-solid fa-arrows-rotate"></i> <span id="lbl-btn-regenerate">重新生成列表</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 搜索与多维度筛选栏 -->
+        <section class="filters-panel glassy">
+            <div class="filter-row search-row">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-input" placeholder="输入你想搜索的数字（支持正则表达式，例如输入 ^888 筛选以 888 开头的域名）...">
+                </div>
+            </div>
+
+            <div class="filter-row select-row">
+                <!-- 状态筛选 -->
+                <div class="filter-group">
+                    <span class="filter-label" id="lbl-filter-status">检测状态:</span>
+                    <div class="tab-filters" id="filter-status">
+                        <button class="tab-btn active" data-status="all" id="tab-status-all">全部</button>
+                        <button class="tab-btn" data-status="available" id="tab-status-available">空闲未注册 (<span id="count-avail">0</span>)</button>
+                        <button class="tab-btn" data-status="registered" id="tab-status-registered">已被占用</button>
+                        <button class="tab-btn" data-status="unchecked" id="tab-status-unchecked">未检测</button>
+                        <button class="tab-btn" data-status="error" id="tab-status-error">查询失败</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-row select-row-secondary">
+                <!-- 长度筛选 -->
+                <div class="filter-group">
+                    <span class="filter-label" id="lbl-filter-length">位数长度:</span>
+                    <div class="tab-filters" id="filter-length">
+                        <button class="tab-btn active" data-len="all" id="tab-len-all">全部</button>
+                        <button class="tab-btn" data-len="6" id="tab-len-6">6位数字</button>
+                        <button class="tab-btn" data-len="7" id="tab-len-7">7位数字</button>
+                        <button class="tab-btn" data-len="8" id="tab-len-8">8位数字</button>
+                    </div>
+                </div>
+
+                <!-- 模式/分类筛选 -->
+                <div class="filter-group">
+                    <span class="filter-label" id="lbl-filter-category">特征分类:</span>
+                    <div class="tab-filters" id="filter-category">
+                        <!-- 由 JS 动态填充，支持中英双语自适应 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 域名卡片视图区 -->
+        <main class="domains-viewport">
+            <div class="grid-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h3 id="lbl-viewport-title">高净值优质域名推荐列表 <span id="displayed-count">(正在载入...)</span></h3>
+                    <button id="btn-export" class="btn btn-glow-green" style="background: rgba(0, 255, 135, 0.1); color: var(--neon-green); border: 1px solid rgba(0, 255, 135, 0.2); padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; height: 28px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: var(--font-body); font-weight: 600;">
+                        <i class="fa-solid fa-file-arrow-down"></i> <span id="lbl-btn-export">导出可用列表</span>
+                    </button>
+                </div>
+                <div class="sort-actions">
+                    <span class="sort-label" id="lbl-sort">排序方式:</span>
+                    <select id="sort-select">
+                        <option value="score-desc" id="opt-sort-score-desc">域名评分从高到低</option>
+                        <option value="score-asc" id="opt-sort-score-asc">域名评分从低到高</option>
+                        <option value="length-asc" id="opt-sort-length-asc">域名长度从短到长</option>
+                        <option value="number-asc" id="opt-sort-number-asc">数字数值从小到大</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 加载中 -->
+            <div class="loader-container" id="grid-loader">
+                <div class="spinner"></div>
+                <p id="lbl-grid-loader">正在使用合成算法极速生成高价值候选域名数据库...</p>
+            </div>
+
+            <!-- 无搜索结果 -->
+            <div class="no-results hidden" id="no-results">
+                <i class="fa-solid fa-folder-open"></i>
+                <p id="lbl-no-results">没有找到符合当前筛选条件的域名。请尝试放宽筛选条件或修改搜索关键字。</p>
+            </div>
+
+            <!-- 卡片网格 -->
+            <div class="domains-grid" id="domains-grid">
+                <!-- 由 JS 动态填充卡片 -->
+            </div>
+        </main>
+
+        <!-- 实时终端日志 -->
+        <section class="terminal-panel glassy">
+            <div class="terminal-header">
+                <div class="terminal-title">
+                    <span class="red-dot"></span>
+                    <span class="yellow-dot"></span>
+                    <span class="green-dot"></span>
+                    <span class="terminal-title-text" id="lbl-terminal-title"><i class="fa-solid fa-terminal"></i> 极速双通道扫描实时日志控制台</span>
+                </div>
+                <button id="btn-clear-logs" class="btn-clear-terminal" title="清除日志"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+            <div class="terminal-body" id="terminal-body">
+                <div class="terminal-line system" id="lbl-terminal-init">系统初始化完毕。请点击上方【启动极速扫描】按钮开启双通道引擎。</div>
+            </div>
+        </section>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
