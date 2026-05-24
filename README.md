@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2016.0.0-blue.svg)](https://nodejs.org/)
-[![GitHub PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](https://github.com/yourusername/digitx/pulls)
+[![GitHub PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](https://github.com/gaoxiaoduan/digitx/pulls)
 
 An ultra-premium, high-performance Node.js numerical domain generator, scorer, and real-time dual-stage scanner. It is designed to help you discover hidden, high-value, and un-registered pure-digit domains (.xyz, .com, .net, .org, .cc, or any custom suffix) by targeting developer-centric ciphers, aesthetic symmetrical structures, and traditional luck patterns.
 

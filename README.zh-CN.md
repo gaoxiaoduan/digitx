@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2016.0.0-blue.svg)](https://nodejs.org/)
-[![GitHub PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](https://github.com/yourusername/digitx/pulls)
+[![GitHub PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](https://github.com/gaoxiaoduan/digitx/pulls)
 
 这是一个专为寻找高价值纯数字域名设计的超强 Node.js 域名合成、评分及实时双通道检测工具。它可以帮助你从海量数字组合中，根据程序员专属暗号、对称镜像、国人吉祥发音等规律，极速找出那些被遗漏的极品未注册域名（支持 .xyz、.com、.net、.org、.cc 或任何自定义后缀）。
 
