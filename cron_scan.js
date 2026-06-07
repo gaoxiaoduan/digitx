@@ -71,6 +71,19 @@ const handleUpdate = () => {
 
 const queue = new CheckerQueue(store, handleUpdate, handleLog);
 
+// --- 自动安全退出机制 (支持通过环境变量动态配置运行时间) ---
+// 优先读取环境变量，如果没有则默认运行 30 分钟
+const envMinutes = process.env.MAX_RUN_TIME_MINUTES ? parseInt(process.env.MAX_RUN_TIME_MINUTES) : 30;
+const MAX_RUN_TIME_MS = envMinutes * 60 * 1000; 
+setTimeout(() => {
+    console.log(`\n[Cron] ⏱️ Reached maximum execution time of ${envMinutes} minutes. Pausing to save progress safely...`);
+    queue.pause(); // 暂停队列
+    exportStaticData(); // 导出当前的进度
+    console.log('[Cron] Exiting safely. The next cron run will resume from here.');
+    process.exit(0);
+}, MAX_RUN_TIME_MS);
+// --------------------------------------------------------
+
 const unchecked = store.data.stats.unchecked;
 if (unchecked === 0) {
     console.log('[Cron] All domains are already checked. Nothing to do.');
