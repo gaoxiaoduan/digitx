@@ -969,13 +969,127 @@ input:checked + .slider::before {
     .config-item {
         width: 100%;
     }
+    .range-display {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
     .range-display input[type="range"] {
+        width: 100%;
         flex-grow: 1;
+    }
+    .range-display span {
+        text-align: right;
     }
     .checkbox-item {
         margin-top: 0;
+        align-items: center;
     }
     .btn-tertiary {
         margin-top: 0;
+    }
+
+    /* Header Optimization */
+    .app-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 15px;
+    }
+    .app-header > div:first-child {
+        flex-wrap: wrap;
+        justify-content: flex-start !important;
+        gap: 10px !important;
+    }
+    .app-title-tag {
+        font-size: 0.8rem;
+        padding: 4px 10px;
+    }
+    
+    /* Stats Panel */
+    .stats-panel {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    /* Filters */
+    .filter-row, .select-row, .select-row-secondary {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 15px;
+    }
+    .filter-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .tab-filters {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    .tab-filters .tab-btn {
+        flex-grow: 1;
+        text-align: center;
+        padding: 8px 10px;
+    }
+
+    /* Viewport Header */
+    .grid-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 15px;
+    }
+    .grid-header > div:first-child {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    .sort-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+    .sort-actions select {
+        width: 100%;
+    }
+
+    /* Buttons Full Width */
+    .scanner-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    .scanner-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    #btn-export {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Static mode info */
+    #static-mode-wrapper {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    #static-mode-wrapper > div {
+        flex-direction: column;
+        align-items: flex-start !important;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Further adjustment for very small screens */
+    .stats-panel {
+        grid-template-columns: 1fr;
+    }
+    .logo-area h1 {
+        font-size: 1.5rem;
+    }
+    .app-container {
+        padding: 15px 10px;
+    }
+    .domains-grid {
+        grid-template-columns: 1fr;
     }
 }
