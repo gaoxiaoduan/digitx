@@ -65,13 +65,21 @@ const LOCALIZATION = {
             '交替循环号': '交替循环号',
             '对称镜像号': '对称镜像号',
             '普通推荐': '普通推荐',
-            '极品豹子': '极品豹子'
+            '极品豹子': '极品豹子',
+            '世纪稀有吉日': '世纪稀有吉日',
+            '城市尊贵号': '城市尊贵号',
+            '年份财富号': '年份财富号',
+            '经典手机尾号': '经典手机尾号'
         },
         categoryShort: {
             '至尊连号豹子': '至尊豹子',
             '对称镜像号': '对称回文',
             '交替循环号': '交替循环',
-            '国人吉祥号': '国人吉祥'
+            '国人吉祥号': '国人吉祥',
+            '世纪稀有吉日': '稀有吉日',
+            '城市尊贵号': '尊贵号',
+            '年份财富号': '发财号',
+            '经典手机尾号': '极品尾号'
         },
         statusTexts: {
             checking: '核对中...',
@@ -150,7 +158,11 @@ const LOCALIZATION = {
             '交替循环号': 'Alternating Periodic',
             '对称镜像号': 'Mirror Palindrome',
             '普通推荐': 'Recommended',
-            '极品豹子': 'Premium Repeater'
+            '极品豹子': 'Premium Repeater',
+            '世纪稀有吉日': 'Century Lucky Date',
+            '城市尊贵号': 'City Premium',
+            '年份财富号': 'Year Fortune',
+            '经典手机尾号': 'Classic Phone Suffix'
         },
         categoryShort: {
             'Super Repeater': 'Repeater',
@@ -173,7 +185,11 @@ const LOCALIZATION = {
             '交替循环号': 'Alternating',
             '对称镜像号': 'Mirror',
             '普通推荐': 'Recom',
-            '极品豹子': 'Prem Rep'
+            '极品豹子': 'Prem Rep',
+            '世纪稀有吉日': 'Lucky Date',
+            '城市尊贵号': 'City Prem',
+            '年份财富号': 'Fortune',
+            '经典手机尾号': 'Phone Suf'
         },
         statusTexts: {
             checking: 'Checking...',

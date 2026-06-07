@@ -10,6 +10,19 @@
 // Developer / Tech terms
 const TECH_CONSTANTS = ['1024', '2048', '4096', '8192', '404', '500', '502', '127001', '12306', '996', '955'];
 const LUCKY_SEGMENTS = ['168', '520', '521', '1314', '666', '888', '999', '518', '528', '3344'];
+const CITY_AREA_CODES = [
+    { code: '010', city: '北京' },
+    { code: '021', city: '上海' },
+    { code: '020', city: '广州' },
+    { code: '0755', city: '深圳' },
+    { code: '0571', city: '杭州' },
+    { code: '028', city: '成都' },
+    { code: '025', city: '南京' },
+    { code: '022', city: '天津' },
+    { code: '023', city: '重庆' },
+    { code: '027', city: '武汉' },
+    { code: '029', city: '西安' }
+];
 
 /**
  * Checks if a string contains unlucky '4' and is NOT part of a developer term
@@ -58,6 +71,65 @@ function evaluateNumber(numStr, exclude4 = true) {
     let score = 0;
     let category = '普通推荐';
     let patternDesc = '普通优质数字域名';
+
+    // 0. HIGH-VALUE DATES & ANNIVERSARIES (YYYYMMDD) - Length 8
+    if (len === 8) {
+        const year = parseInt(numStr.slice(0, 4), 10);
+        const month = parseInt(numStr.slice(4, 6), 10);
+        const day = parseInt(numStr.slice(6, 8), 10);
+        
+        if (year >= 1980 && year <= 2025 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            // Check for special highly valuable dates
+            const isSymmetrical = (numStr[0] === numStr[7] && numStr[1] === numStr[6] && numStr[2] === numStr[5] && numStr[3] === numStr[4]);
+            const isRepDate = (numStr.slice(4, 6) === numStr.slice(6, 8)); // e.g. 0808, 0909
+            const isNewYear = (month === 1 && day === 1);
+            
+            if (isSymmetrical) {
+                return { score: 98, category: '世纪稀有吉日', patternDesc: `完全对称回文吉日 (${numStr})` };
+            } else if (isRepDate || isNewYear) {
+                return { score: 95, category: '世纪稀有吉日', patternDesc: `经典叠字吉日 (${year}年${numStr.slice(4,6)}月${numStr.slice(6,8)}日)` };
+            } else if (year >= 2000) {
+                return { score: 90, category: '世纪稀有吉日', patternDesc: `千禧年标准生辰/纪念日 (${year}-${numStr.slice(4,6)}-${numStr.slice(6,8)})` };
+            } else {
+                return { score: 88, category: '世纪稀有吉日', patternDesc: `经典标准生辰/纪念日 (${year}-${numStr.slice(4,6)}-${numStr.slice(6,8)})` };
+            }
+        }
+    }
+
+    // 0.1 CITY AREA CODES (Length 7/8)
+    for (const cityInfo of CITY_AREA_CODES) {
+        if (numStr.startsWith(cityInfo.code)) {
+            const suffix = numStr.slice(cityInfo.code.length);
+            const isLeopard = new Set(suffix).size === 1; // e.g., 8888, 6666
+            const isStraight = '0123456789'.includes(suffix) || '9876543210'.includes(suffix);
+            if (isLeopard) {
+                return { score: 96, category: '城市尊贵号', patternDesc: `${cityInfo.city}区号 (${cityInfo.code}) + 顶级连号豹子 (${suffix})` };
+            }
+            if (isStraight) {
+                return { score: 92, category: '城市尊贵号', patternDesc: `${cityInfo.city}区号 (${cityInfo.code}) + 经典顺子 (${suffix})` };
+            }
+        }
+    }
+
+    // 0.2 YEAR + FORTUNE (YYYY + 8888) - Length 8
+    if (len === 8) {
+        const yearStr = numStr.slice(0, 4);
+        const year = parseInt(yearStr, 10);
+        const suffix = numStr.slice(4);
+        if (year >= 2000 && year <= 2030 && ['8888', '6666', '9999'].includes(suffix)) {
+            return { score: 94, category: '年份财富号', patternDesc: `${year}年份 + 极品财富连号 (${suffix})` };
+        }
+    }
+
+    // 0.3 CLASSIC PHONE SUFFIXES (Length 7/8)
+    const phoneSuffixes = ['1388888', '1366666', '1399999', '1688888', '1888888'];
+    if (phoneSuffixes.includes(numStr)) {
+        return { score: 95, category: '经典手机尾号', patternDesc: `顶级手机号段及连号 (${numStr})` };
+    }
+    const stepUp = '0123456789';
+    if (numStr.startsWith('88') && stepUp.includes(numStr.slice(2))) {
+        return { score: 92, category: '经典手机尾号', patternDesc: `发财起头步步高顺子 (${numStr})` };
+    }
 
     // 1. PERFECT REPEAT (AAAAAA+)
     const isPureRepeat = new Set(numStr).size === 1;
@@ -565,6 +637,52 @@ function generateCandidates(options = {}) {
         }
     }
 
+    // GENERATOR WORKFLOW 6: DATES & ANNIVERSARIES (YYYYMMDD)
+    const years = ['1999', '2000', '2008', '2020', '2024', '2025'];
+    const goodMonths = ['01', '02', '05', '06', '08', '09', '10', '11', '12'];
+    for (const y of years) {
+        for (const m of goodMonths) {
+            // Rep dates
+            addCandidate(`${y}${m}${m}`);
+            // New year
+            addCandidate(`${y}0101`);
+            // Symmetrical (if any generated)
+            const mirror = y + y.split('').reverse().join('');
+            if (mirror.length === 8) addCandidate(mirror);
+        }
+    }
+    // Specific well-known symmetrical dates
+    addCandidate('20200202');
+    addCandidate('20211202');
+
+    // GENERATOR WORKFLOW 7: CITY AREA CODES
+    const luckySuffixes = ['8888', '6666', '9999', '1688', '5200', '1234', '12345'];
+    for (const city of CITY_AREA_CODES) {
+        for (const suff of luckySuffixes) {
+            addCandidate(city.code + suff);
+            if ((city.code + suff).length < 8) {
+                // padding one more
+                addCandidate(city.code + suff + suff[suff.length - 1]);
+            }
+        }
+    }
+
+    // GENERATOR WORKFLOW 8: YEAR + FORTUNE & PHONE SUFFIXES
+    for (let y = 2020; y <= 2030; y++) {
+        addCandidate(`${y}8888`);
+        addCandidate(`${y}6666`);
+    }
+    const phoneList = ['1388888', '1366666', '1399999', '1688888', '1888888'];
+    for (const p of phoneList) {
+        addCandidate(p);
+    }
+    for (const len of [6, 7, 8]) {
+        for (let i = 0; i <= 9 - (len - 2); i++) {
+            const seq = '0123456789'.substring(i, i + (len - 2));
+            addCandidate('88' + seq);
+        }
+    }
+
     // Convert Set back to sorted array
     const sortedList = Array.from(candidates)
         .map(JSON.parse)
@@ -578,5 +696,6 @@ module.exports = {
     generateCandidates,
     hasUnlucky4,
     TECH_CONSTANTS,
-    LUCKY_SEGMENTS
+    LUCKY_SEGMENTS,
+    CITY_AREA_CODES
 };
