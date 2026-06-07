@@ -67,7 +67,20 @@
 
         <!-- 控制面板 -->
         <section class="controls-panel glassy">
-            <div class="panel-section scanner-actions">
+            <!-- 静态模式专用的提示徽章 -->
+            <div id="static-mode-wrapper" style="display: none; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 12px; background: rgba(0, 255, 240, 0.04); border: 1px solid rgba(0, 255, 240, 0.15); padding: 8px 16px; border-radius: 8px;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color: var(--neon-cyan); font-size: 1rem;"></i>
+                    <span id="lbl-static-update-time" style="font-size: 0.85rem; font-family: var(--font-header); font-weight: 600; color: var(--text-primary);">数据每日自动更新 | Data Auto-updated Daily</span>
+                </div>
+                <div id="static-config-info" style="display: flex; align-items: center; gap: 15px; font-size: 0.8rem; color: var(--text-secondary); background: rgba(255,255,255,0.02); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-glass);">
+                    <span>TLD: <strong id="lbl-static-tld" style="color: var(--neon-cyan); font-family: var(--font-mono);">.xyz</strong></span>
+                    <span style="width: 1px; height: 12px; background: rgba(255,255,255,0.1);"></span>
+                    <span id="lbl-static-exclude4">智能避讳 4: <strong id="lbl-static-exclude4-val" style="color: var(--neon-cyan);">开启</strong></span>
+                </div>
+            </div>
+
+            <div class="panel-section scanner-actions" id="local-scanner-actions">
                 <button id="btn-start" class="btn btn-primary btn-glow-green">
                     <i class="fa-solid fa-play"></i> <span id="lbl-btn-start">启动极速扫描</span>
                 </button>
@@ -76,7 +89,7 @@
                 </button>
             </div>
 
-            <div class="panel-section scanner-config">
+            <div class="panel-section scanner-config" id="local-scanner-config">
                 <div class="config-item">
                     <label for="cfg-delay" id="lbl-cfg-delay">WHOIS 核对延时 (ms)</label>
                     <div class="range-display">

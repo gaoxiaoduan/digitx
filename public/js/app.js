@@ -212,6 +212,12 @@ let updateCursor = 0;
 // 自适应初始语言检测 (优先使用浏览器首选语言，默认英语)
 let currentLang = navigator.language.startsWith('zh') ? 'zh' : 'en';
 
+// Detect if running in static compiled mode (e.g. Cloudflare Pages public deployment)
+const isStaticMode = location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+
+// Static status data cache
+let staticStatusData = null;
+
 // 轮询定时器
 let statusPollInterval = null;
 
@@ -250,7 +256,12 @@ async function initApp() {
     setupEventListeners();
     updateUILanguage(); // 触发全系统双语初始化
     await loadDomains();
-    startStatusPolling();
+    
+    if (isStaticMode) {
+        await setupStaticModeUI();
+    } else {
+        startStatusPolling();
+    }
 }
 
 // 1. 获取候选域名数据库
@@ -260,7 +271,9 @@ async function loadDomains() {
         elements.domainsGrid.classList.add('hidden');
         elements.noResults.classList.add('hidden');
 
-        const res = await fetch('/api/domains');
+        // Static mode loads pre-compiled domains list JSON instead of API
+        const targetUrl = isStaticMode ? '/data/domains.json' : '/api/domains';
+        const res = await fetch(targetUrl);
         allDomains = await res.json();
 
         elements.gridLoader.classList.add('hidden');
@@ -271,6 +284,54 @@ async function loadDomains() {
     } catch (err) {
         console.error('加载候选域名失败:', err);
         appendTerminalLine(`[系统错误] 加载候选域名列表失败: ${err.message}`, 'error');
+    }
+}
+
+// 1a. 设置静态网页端 UI 状态 (Cloudflare Pages 专用)
+async function setupStaticModeUI() {
+    const staticWrapper = document.getElementById('static-mode-wrapper');
+    const localActions = document.getElementById('local-scanner-actions');
+    const localConfig = document.getElementById('local-scanner-config');
+    const terminalPanel = document.querySelector('.terminal-panel');
+
+    if (staticWrapper) staticWrapper.style.display = 'flex';
+    if (localActions) localActions.style.display = 'none';
+    if (localConfig) localConfig.style.display = 'none';
+    if (terminalPanel) terminalPanel.style.display = 'none';
+
+    try {
+        if (!staticStatusData) {
+            const res = await fetch('/data/status.json');
+            staticStatusData = await res.json();
+        }
+        
+        // Update stats
+        stats = staticStatusData.stats;
+        updateStatsUI();
+
+        // Update static configuration text badge
+        const tldLabel = document.getElementById('lbl-static-tld');
+        const exclude4Val = document.getElementById('lbl-static-exclude4-val');
+        const updateTimeLabel = document.getElementById('lbl-static-update-time');
+
+        if (tldLabel) tldLabel.textContent = staticStatusData.config.tld || '.xyz';
+        if (exclude4Val) {
+            exclude4Val.textContent = currentLang === 'zh' 
+                ? (staticStatusData.config.exclude4 ? '开启' : '关闭')
+                : (staticStatusData.config.exclude4 ? 'Enabled' : 'Disabled');
+        }
+        
+        if (updateTimeLabel) {
+            const formattedDate = new Date(staticStatusData.lastUpdated || staticStatusData.updatedAt || new Date()).toLocaleString(
+                currentLang === 'zh' ? 'zh-CN' : 'en-US', 
+                { dateStyle: 'medium', timeStyle: 'short' }
+            );
+            updateTimeLabel.textContent = currentLang === 'zh'
+                ? `数据自动更新 | 最后更新时间: ${formattedDate}`
+                : `Data Auto-updated | Last Updated: ${formattedDate}`;
+        }
+    } catch (err) {
+        console.error('Failed to load static status metadata:', err);
     }
 }
 
@@ -422,6 +483,10 @@ function updateUILanguage() {
     // 重建分类 Tabs 并重排过滤卡片
     buildCategoryTabs();
     applyFiltersAndSort();
+
+    if (isStaticMode && staticStatusData) {
+        setupStaticModeUI();
+    }
 }
 
 // 2. 绑定交互事件监听
