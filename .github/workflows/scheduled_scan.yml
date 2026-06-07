@@ -43,4 +43,4 @@ jobs:
         # Force add domains_db.json in case it's in gitignore
         git add -f domains_db.json public/data/domains.json public/data/status.json
         # Only commit if there are changes
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update domain scan results [skip ci]" && git push)
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update domain scan results" && git push)
