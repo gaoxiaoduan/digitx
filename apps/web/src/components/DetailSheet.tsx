@@ -72,7 +72,7 @@ export const DetailSheet: React.FC<DetailSheetProps> = ({ locale, domain, onClos
             <SheetFooter className="border-t px-6 py-5">
               {isAvailable ? (
                 <a
-                  href={`https://www.namesilo.com/domain/search-domains?query=${domain.domain}`}
+                  href={`https://www.spaceship.com/domain-search/?query=${domain.domain}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(buttonVariants({ size: 'lg' }), 'w-full')}

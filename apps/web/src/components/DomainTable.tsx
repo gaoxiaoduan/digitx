@@ -80,7 +80,7 @@ export const DomainTable: React.FC<DomainTableProps> = ({ domains, locale, onSel
                     <td className="px-5 py-4 text-right" onClick={(event) => event.stopPropagation()}>
                       {isAvailable ? (
                         <a
-                          href={`https://www.namesilo.com/domain/search-domains?query=${domain.domain}`}
+                          href={`https://www.spaceship.com/domain-search/?query=${domain.domain}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={cn(buttonVariants({ size: 'sm' }), 'gap-1.5')}
