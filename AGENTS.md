@@ -31,3 +31,18 @@ The domain validation utilizes a two-stage process in `checker.js`:
 - **Localization**: All UI text must be implemented using the `LOCALIZATION` dictionary in `app.js`. Hardcoded text in `index.html` should be dynamically replaced by JS to support bilingual users.
 - **Stateless Cloud Execution**: Remember that GitHub Actions provides ephemeral environments. Any state changes must be saved to `domains_db.json` and committed back to the repository before the process exits.
 - **Throttling is Critical**: Never bypass the WHOIS delay in `checker.js` or `cron_scan.js`. Bypassing this will result in IP blacklisting by the WHOIS registries.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs for this repo live as GitHub issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical triage roles mapped to GitHub label strings. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout (`CONTEXT.md` + `docs/adr/` at root). See `docs/agents/domain.md`.
+
