@@ -6,31 +6,31 @@ Welcome, Agent! This document provides the necessary context, architecture, and 
 DIGITX is a high-performance, dual-channel domain finder and validator designed specifically for hunting "premium numeric domains" (e.g., repeating numbers, sequences, lucky numbers). It generates potential high-value numeric domains, scores them based on specific patterns, and rapidly checks their availability.
 
 ## 2. Core Architecture
-The system employs a dual-mode architecture to ensure flexibility:
-- **Local Mode**: Runs via an Express backend (`server.js`) or CLI (`cli.js`). It allows real-time interactive scanning, configuration, and terminal logs inside the browser.
-- **Static Mode (Production)**: Hosted entirely statically (e.g., on Cloudflare Pages). The frontend (`public/js/app.js`) automatically detects this mode and hides interactive scanning tools, instead loading pre-compiled JSON data.
-- **Automation Pipeline**: A headless Node.js script (`cron_scan.js`) runs periodically via GitHub Actions (`.github/workflows/scheduled_scan.yml`). It performs the heavy lifting of domain validation in small batches and commits the updated data (`public/data/domains.json` and `public/data/status.json`) back to the repository, which triggers a Cloudflare Pages deployment.
+The project is a pnpm TypeScript monorepo:
+- **`apps/web`**: React + Vite + Tailwind/shadcn SPA, deployed to Cloudflare Pages. It reads domain data from `GET /api/domains`.
+- **`apps/api`**: Hono Cloudflare Worker. It exposes public read endpoints and the authenticated `POST /api/sync` endpoint, and stores data in Cloudflare KV.
+- **`apps/scanner`**: Node.js CLI and scheduled scanner. The GitHub Actions workflow runs `pnpm scan` and sends its batch result to the Worker API.
+- **`packages/core`**: Shared, typed generator, DNS/WHOIS checker, and domain database utilities.
 
 ## 3. The Scanning Engine (Dual-Channel)
-The domain validation utilizes a two-stage process in `checker.js`:
-1. **Stage 1 (DNS Blind Scan)**: Extremely fast concurrent DNS checks (`dns.resolveAny`). It filters out actively used domains immediately without hitting WHOIS servers.
-2. **Stage 2 (WHOIS Verification)**: The remaining domains are verified using WHOIS. This is artificially throttled (default 2000ms delay) to prevent WHOIS server IP bans.
+`packages/core/src/checker.ts` performs validation in two stages:
+1. **Stage 1 (DNS Blind Scan)**: Concurrent NS-record lookups filter actively used domains without querying WHOIS.
+2. **Stage 2 (WHOIS Verification)**: The remaining domains are verified through WHOIS. Keep the default 2000ms throttle to avoid registry IP bans.
 
 ## 4. Key Files & Structure
-- **`generator.js`**: Generates numeric domains based on length, filters out unlucky numbers (e.g., '4', unless it's a programmer special like '1024' or '404'), categorizes them (e.g., 'Super Repeater', 'Chinese Lucky'), and scores them.
-- **`checker.js`**: Core validation logic (DNS + WHOIS). Includes `CheckerQueue` for asynchronous, throttled processing, and `LocalStore` to persist state.
-- **`server.js`**: Express backend for local mode. Serves the UI, provides APIs to start/pause scanning, and streams SSE logs.
-- **`cli.js`**: Command-line interface using `inquirer` to kick off the generation and scanning process directly in the terminal.
-- **`cron_scan.js`**: Headless scanning script for GitHub Actions. Implements a timeout safeguard (e.g., pauses and exits gracefully before the Action gets forcefully killed by GitHub's time limits).
-- **`public/index.html`**: The UI entry point. Uses modern CSS (glassmorphism, neon glows) and supports English/Chinese localization.
-- **`public/js/app.js`**: The frontend logic. Automatically toggles between English and Chinese (`LOCALIZATION`), handles the filtering/sorting of domains, and adapts the UI for Local vs. Static mode.
-- **`domains_db.json`**: The single source of truth for the database state (tracked in git to persist GitHub Actions progress).
+- **`packages/core/src/generator.ts`**: Generates and scores premium numeric-domain candidates.
+- **`packages/core/src/checker.ts`**: DNS/WHOIS validation and typed database helpers.
+- **`apps/scanner/src/cli.ts`**: Interactive local scanner.
+- **`apps/scanner/src/cron_scan.ts`**: Scheduled batch scanner and API sync client.
+- **`apps/api/src/index.ts`**: Hono Worker routes and KV access.
+- **`apps/web/src/App.tsx`**: React SPA composition; components are in `apps/web/src/components`.
+- **`apps/api/wrangler.jsonc`**: Worker binding configuration.
 
 ## 5. Development Guidelines
-- **UI Aesthetics**: The project relies on a premium, dark-themed, "cyberpunk" aesthetic. Ensure any new UI components utilize existing CSS variables (`--neon-cyan`, `--glass-bg`, etc.).
-- **Localization**: All UI text must be implemented using the `LOCALIZATION` dictionary in `app.js`. Hardcoded text in `index.html` should be dynamically replaced by JS to support bilingual users.
-- **Stateless Cloud Execution**: Remember that GitHub Actions provides ephemeral environments. Any state changes must be saved to `domains_db.json` and committed back to the repository before the process exits.
-- **Throttling is Critical**: Never bypass the WHOIS delay in `checker.js` or `cron_scan.js`. Bypassing this will result in IP blacklisting by the WHOIS registries.
+- **UI aesthetics**: Follow `DESIGN.md` and the established Tailwind design tokens in `apps/web`; the approved direction is Vercel-style near-white surfaces and ink text.
+- **Cloud data flow**: Cloudflare KV is the production source of truth. `domains_db.json` is an ignored local scanner checkpoint only; never commit it.
+- **Build commands**: Use `pnpm check-types`, `pnpm build`, `pnpm cli`, and `pnpm scan` from the repository root.
+- **Throttling is critical**: Never bypass the WHOIS delay in `packages/core/src/checker.ts` or `apps/scanner/src/cron_scan.ts`.
 
 ## Agent skills
 
@@ -45,4 +45,3 @@ Canonical triage roles mapped to GitHub label strings. See `docs/agents/triage-l
 ### Domain docs
 
 Single-context layout (`CONTEXT.md` + `docs/adr/` at root). See `docs/agents/domain.md`.
-

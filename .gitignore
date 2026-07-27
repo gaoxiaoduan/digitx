@@ -9,10 +9,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local database file (highly critical to ignore so users' local progress is preserved and not overwritten)
+# Local scanner state
 domains_db.json
-!public/data/domains.json
-!public/data/status.json
 
 # Operating System Files
 .DS_Store
