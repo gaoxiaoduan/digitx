@@ -20,6 +20,6 @@
     "@types/inquirer": "^8.2.10",
     "@types/node": "^20.12.7",
     "tsx": "^4.7.2",
-    "typescript": "^5.4.5"
+    "typescript": "^7.0.2"
   }
 }
