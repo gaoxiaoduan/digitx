@@ -1,20 +1,22 @@
 {
-  "name": "digitx",
-  "version": "1.0.0",
-  "description": "Find unregistered high-value, special-meaning .xyz numerical domains.",
-  "main": "server.js",
-  "type": "commonjs",
+  "name": "digitx-monorepo",
+  "version": "2.0.0",
+  "private": true,
+  "description": "High-performance numeric domain finder & validator monorepo",
   "scripts": {
-    "start": "node server.js",
-    "web": "node server.js",
-    "cli": "node cli.js"
+    "dev": "pnpm --recursive --parallel run dev",
+    "dev:web": "pnpm --filter @digitx/web dev",
+    "dev:api": "pnpm --filter @digitx/api dev",
+    "build": "pnpm --recursive run build",
+    "cli": "pnpm --filter @digitx/scanner cli",
+    "scan": "pnpm --filter @digitx/scanner scan",
+    "check-types": "pnpm --recursive run check-types"
   },
-  "dependencies": {
-    "boxen": "^5.1.2",
-    "chalk": "^4.1.2",
-    "express": "^4.19.2",
-    "inquirer": "^8.2.6",
-    "ora": "^5.4.1",
-    "whoiser": "^1.15.0"
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "tsx": "^4.7.2",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.8",
+    "wrangler": "^3.50.0"
   }
 }

@@ -1,0 +1,27 @@
+{
+  "name": "@digitx/core",
+  "version": "2.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "whoiser": "^1.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5"
+  }
+}

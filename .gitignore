@@ -1,6 +1,8 @@
 # Dependency directories
 node_modules/
 jspm_packages/
+.pnpm-store/*
+dist/
 
 # Debug logs
 npm-debug.log*
@@ -20,3 +22,5 @@ Thumbs.db
 *.log
 
 .idea
+
+.wrangler

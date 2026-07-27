@@ -1,0 +1,21 @@
+{
+  "name": "@digitx/api",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --minify src/index.ts",
+    "build": "wrangler deploy --dry-run --outdir dist src/index.ts",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@digitx/core": "workspace:*",
+    "hono": "^4.2.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240405.0",
+    "typescript": "^5.4.5",
+    "wrangler": "^3.50.0"
+  }
+}
