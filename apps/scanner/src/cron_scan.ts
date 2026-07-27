@@ -9,9 +9,22 @@ import {
   DomainDatabase
 } from '@digitx/core';
 
-const DB_PATH = path.resolve(process.cwd(), 'domains_db.json');
+function readPositiveInteger(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) return fallback;
+
+  const value = Number.parseInt(rawValue, 10);
+  if (Number.isSafeInteger(value) && value > 0) return value;
+
+  console.warn(`Ignoring invalid ${name}=${rawValue}; using ${fallback}.`);
+  return fallback;
+}
+
+const DB_PATH = path.resolve(process.cwd(), process.env.DIGITX_DB_PATH || 'domains_db.json');
 const API_URL = process.env.API_URL || 'http://localhost:8787';
 const SYNC_SECRET = process.env.SYNC_SECRET || 'digitx-sync-secret-default';
+const MAX_CANDIDATES = readPositiveInteger('SCAN_MAX_CANDIDATES', Number.MAX_SAFE_INTEGER);
+const MAX_WHOIS_PER_RUN = readPositiveInteger('SCAN_MAX_WHOIS_PER_RUN', 50);
 
 function loadDatabase(): DomainDatabase {
   if (fs.existsSync(DB_PATH)) {
@@ -25,13 +38,18 @@ function loadDatabase(): DomainDatabase {
 
   // Initial candidate generation
   console.log('Generating initial domain candidates...');
-  const candidates = generateCandidates({
+  const generatedCandidates = generateCandidates({
     minLength: 6,
     maxLength: 8,
     excludeUnlucky4: true,
     minScore: 60,
     tld: '.xyz'
   });
+  const candidates = generatedCandidates.slice(0, MAX_CANDIDATES);
+
+  if (candidates.length < generatedCandidates.length) {
+    console.log(`Limiting local candidate set to ${candidates.length}/${generatedCandidates.length} domains.`);
+  }
 
   const db: DomainDatabase = {
     domains: {},
@@ -107,13 +125,12 @@ async function runScan() {
   console.log(`🚀 Phase 2: WHOIS Verification on ${remaining.length} suspected available domains...`);
 
   // Process batch of WHOIS
-  const maxWhoisPerRun = 50;
   let count = 0;
 
   for (const item of remaining) {
-    if (count >= maxWhoisPerRun) break;
+    if (count >= MAX_WHOIS_PER_RUN) break;
     count++;
-    console.log(`[${count}/${maxWhoisPerRun}] Verifying WHOIS for ${item.domain}...`);
+    console.log(`[${count}/${MAX_WHOIS_PER_RUN}] Verifying WHOIS for ${item.domain}...`);
     try {
       const res = await checkWHOIS(item.domain);
       if (res.registered) {

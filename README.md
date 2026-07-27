@@ -44,6 +44,15 @@ Run one scheduled scan batch and sync it to the API. Set `API_URL` and `SYNC_SEC
 pnpm scan
 ```
 
+For a quick local acceptance run, start the local Worker and use the isolated, small dataset command. It generates 10 candidates and checks at most 3 WHOIS records per run:
+
+```bash
+pnpm dev
+pnpm scan:local
+```
+
+It writes its checkpoint to the ignored `domains_db.local.json`, so it does not affect the normal scanner state.
+
 Run the frontend or Worker locally:
 
 ```bash

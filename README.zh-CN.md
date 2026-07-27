@@ -44,6 +44,15 @@ pnpm cli
 pnpm scan
 ```
 
+需要快速进行本地验收时，先启动本地 Worker，再运行独立的小数据集命令。它只生成 10 个候选，且每次最多执行 3 次 WHOIS 查询：
+
+```bash
+pnpm dev
+pnpm scan:local
+```
+
+该命令使用已被 Git 忽略的 `domains_db.local.json`，不会影响常规扫描器的本地进度。
+
 本地运行前端或 Worker：
 
 ```bash

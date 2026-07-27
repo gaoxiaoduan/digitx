@@ -10,7 +10,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Local scanner state
-domains_db.json
+domains_db*.json
 
 # Operating System Files
 .DS_Store
