@@ -5,6 +5,25 @@ export default {
   theme: {
     extend: {
       colors: {
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        card: 'rgb(var(--card) / <alpha-value>)',
+        'card-foreground': 'rgb(var(--card-foreground) / <alpha-value>)',
+        primary: 'rgb(var(--primary) / <alpha-value>)',
+        'primary-foreground': 'rgb(var(--primary-foreground) / <alpha-value>)',
+        secondary: 'rgb(var(--secondary) / <alpha-value>)',
+        'secondary-foreground': 'rgb(var(--secondary-foreground) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        'muted-foreground': 'rgb(var(--muted-foreground) / <alpha-value>)',
+        accent: 'rgb(var(--accent) / <alpha-value>)',
+        'accent-foreground': 'rgb(var(--accent-foreground) / <alpha-value>)',
+        border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--input) / <alpha-value>)',
+        ring: 'rgb(var(--ring) / <alpha-value>)',
+        available: 'rgb(var(--available) / <alpha-value>)',
+        registered: 'rgb(var(--registered) / <alpha-value>)',
+        pending: 'rgb(var(--pending) / <alpha-value>)',
+        score: 'rgb(var(--score) / <alpha-value>)',
         ink: '#171717',
         canvas: '#ffffff',
         'canvas-soft': '#fafafa',
@@ -27,6 +46,10 @@ export default {
         md: '8px',
         sm: '6px',
         pill: '100px'
+      },
+      boxShadow: {
+        surface: '0 1px 1px rgb(0 0 0 / 0.03), 0 2px 4px rgb(0 0 0 / 0.04), inset 0 0 0 1px rgb(0 0 0 / 0.04)',
+        floating: '0 2px 2px rgb(0 0 0 / 0.04), 0 8px 16px -4px rgb(0 0 0 / 0.08), inset 0 0 0 1px rgb(0 0 0 / 0.04)'
       }
     }
   },

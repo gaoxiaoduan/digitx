@@ -1,68 +1,68 @@
 import React from 'react';
 import { DomainStats } from '@digitx/core';
-import { Sparkles, CheckCircle2, ShieldCheck, Database } from 'lucide-react';
+import { ArrowRight, CheckCircle2, CircleDashed, ScanSearch, ShieldCheck } from 'lucide-react';
+import { type Locale, copy } from '@/lib/copy';
+import { cn } from '@/lib/utils';
 
 interface HeroBandProps {
   stats: DomainStats;
+  locale: Locale;
 }
 
-export const HeroBand: React.FC<HeroBandProps> = ({ stats }) => {
+export const HeroBand: React.FC<HeroBandProps> = ({ stats, locale }) => {
+  const text = copy[locale];
+  const metrics = [
+    { label: text.available, value: stats.available, tone: 'text-available' },
+    { label: text.checked, value: stats.checked, tone: 'text-foreground' },
+    { label: text.registered, value: stats.registered, tone: 'text-muted-foreground' },
+    { label: text.queued, value: stats.unchecked, tone: 'text-pending' }
+  ];
+
   return (
-    <div className="relative overflow-hidden bg-canvas border-b border-hairline pt-12 pb-16 mesh-gradient-bg">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-pill bg-canvas-soft border border-hairline text-xs font-mono text-hairline-strong mb-6 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-brand-teal" />
-            <span>Dual-Channel DNS & WHOIS Verification Engine</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-ink mb-4 max-w-2xl">
-            DIGITX. <span className="text-hairline-strong font-normal">Premium Numeric Domains.</span>
-          </h1>
-
-          <p className="text-base sm:text-lg text-hairline-strong max-w-xl mb-10 leading-relaxed">
-            极速盲扫与权威 WHOIS 双通道深度校验，发现具备高度收藏与商业价值的纯数字 .xyz 靓号域名。
+    <section className="mesh-gradient relative overflow-hidden border-b bg-card">
+      <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="w-full">
+          <p className="mb-5 flex items-center gap-2 font-mono text-xs text-muted-foreground">
+            <ScanSearch className="size-4 text-available" />
+            {text.eyebrow}
           </p>
+          <h1 className="text-4xl font-semibold tracking-[-0.06em] text-foreground sm:text-5xl sm:leading-[1.05]">
+            {text.heroTitle}
+          </h1>
+          <p className="mt-5 text-base leading-7 text-muted-foreground sm:text-lg">{text.heroDescription}</p>
+        </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-4xl">
-            <div className="bg-canvas border border-hairline rounded-lg p-5 stacked-shadow text-left">
-              <div className="flex items-center justify-between text-hairline-strong text-xs font-mono mb-2">
-                <span>TOTAL CANDIDATES</span>
-                <Database className="w-4 h-4 text-brand-blue" />
-              </div>
-              <div className="text-2xl font-bold text-ink font-mono">{stats.total.toLocaleString()}</div>
-              <div className="text-xs text-hairline-strong mt-1">内置高分生成算法</div>
+        <div className="mt-10 grid w-full grid-cols-2 overflow-hidden rounded-lg border bg-card/80 shadow-surface sm:grid-cols-4">
+          {metrics.map((metric, index) => (
+            <div
+              key={metric.label}
+              className={cn(
+                'flex flex-col gap-2 p-4 sm:p-5',
+                index < metrics.length - 1 && 'border-b sm:border-b-0 sm:border-r',
+              )}
+            >
+              <span className="font-mono text-[11px] text-muted-foreground">{metric.label}</span>
+              <span className={`font-mono text-2xl font-medium tracking-tight sm:text-3xl ${metric.tone}`}>
+                {metric.value.toLocaleString()}
+              </span>
             </div>
+          ))}
+        </div>
 
-            <div className="bg-canvas border border-hairline rounded-lg p-5 stacked-shadow text-left">
-              <div className="flex items-center justify-between text-hairline-strong text-xs font-mono mb-2">
-                <span>AVAILABLE NOW</span>
-                <CheckCircle2 className="w-4 h-4 text-brand-teal" />
-              </div>
-              <div className="text-2xl font-bold text-brand-teal font-mono">{stats.available.toLocaleString()}</div>
-              <div className="text-xs text-hairline-strong mt-1">确认空闲可自由注册</div>
-            </div>
-
-            <div className="bg-canvas border border-hairline rounded-lg p-5 stacked-shadow text-left">
-              <div className="flex items-center justify-between text-hairline-strong text-xs font-mono mb-2">
-                <span>CHECKED</span>
-                <ShieldCheck className="w-4 h-4 text-brand-violet" />
-              </div>
-              <div className="text-2xl font-bold text-ink font-mono">{stats.checked.toLocaleString()}</div>
-              <div className="text-xs text-hairline-strong mt-1">完成了两阶段核查</div>
-            </div>
-
-            <div className="bg-canvas border border-hairline rounded-lg p-5 stacked-shadow text-left">
-              <div className="flex items-center justify-between text-hairline-strong text-xs font-mono mb-2">
-                <span>REGISTERED</span>
-                <span className="w-2 h-2 rounded-full bg-hairline-strong"></span>
-              </div>
-              <div className="text-2xl font-bold text-hairline-strong font-mono">{stats.registered.toLocaleString()}</div>
-              <div className="text-xs text-hairline-strong mt-1">已被其他人买走</div>
-            </div>
+        <div className="mt-8 w-full rounded-lg border bg-background/60 px-4 py-3 backdrop-blur-sm sm:px-5">
+          <div className="mb-3 flex items-center justify-between font-mono text-[11px] text-muted-foreground">
+            <span>{text.verificationPath}</span>
+            <span>{stats.total.toLocaleString()} {text.domains}</span>
+          </div>
+          <div className="verification-line h-px w-full" />
+          <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5"><CircleDashed className="size-3.5" />{text.dns}</span>
+            <span className="flex items-center justify-center gap-1.5"><ShieldCheck className="size-3.5" />{text.whois}</span>
+            <span className="flex items-center justify-end gap-1.5"><CheckCircle2 className="size-3.5" />{text.availability}</span>
           </div>
         </div>
       </div>
-    </div>
+      <ArrowRight className="pointer-events-none absolute -right-10 bottom-8 size-40 text-foreground/[0.035] sm:size-56" aria-hidden="true" />
+    </section>
   );
 };

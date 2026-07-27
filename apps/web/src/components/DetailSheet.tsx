@@ -1,111 +1,92 @@
 import React from 'react';
 import { DomainRecord } from '@digitx/core';
-import { X, ExternalLink, ShieldCheck, Tag, Info, Calendar } from 'lucide-react';
+import { Calendar, ExternalLink, Info, ShieldCheck, Tag, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { type Locale, copy, statusLabel } from '@/lib/copy';
+import { cn } from '@/lib/utils';
 
 interface DetailSheetProps {
+  locale: Locale;
   domain: DomainRecord | null;
   onClose: () => void;
 }
 
-export const DetailSheet: React.FC<DetailSheetProps> = ({ domain, onClose }) => {
-  if (!domain) return null;
+export const DetailSheet: React.FC<DetailSheetProps> = ({ locale, domain, onClose }) => {
+  const text = copy[locale];
+  const isAvailable = domain?.status === 'available';
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
-        className="fixed inset-0"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-md bg-canvas border-l border-hairline h-full shadow-2xl p-6 flex flex-col justify-between z-10 overflow-y-auto animate-in slide-in-from-right duration-300">
-        <div>
-          {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-hairline mb-6">
-            <div>
-              <span className="text-xs font-mono text-hairline-strong uppercase">Domain Detail</span>
-              <h2 className="text-2xl font-bold font-mono text-ink mt-0.5">{domain.domain}</h2>
+    <Sheet open={Boolean(domain)} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <SheetContent side="right" className="gap-0 p-0">
+        {domain && (
+          <>
+            <SheetHeader className="border-b px-6 py-5 pr-14">
+              <p className="font-mono text-xs text-muted-foreground">{text.detailEyebrow}</p>
+              <SheetTitle className="font-mono text-2xl">{domain.domain}</SheetTitle>
+              <SheetDescription>{text.detailDescription}</SheetDescription>
+            </SheetHeader>
+            <SheetClose asChild>
+              <Button variant="ghost" size="icon" className="absolute right-4 top-4" aria-label={text.close}>
+                <X />
+              </Button>
+            </SheetClose>
+
+            <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
+              <section className="rounded-lg border bg-muted/50 p-5">
+                <p className="font-mono text-xs text-muted-foreground">{text.score}</p>
+                <p className="mt-2 font-mono text-4xl font-medium tracking-tight text-score">{domain.score}<span className="text-lg text-muted-foreground"> / 100</span></p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{domain.patternDesc}</p>
+              </section>
+
+              <dl className="flex flex-col divide-y border-y">
+                <div className="flex items-center justify-between gap-5 py-4">
+                  <dt className="flex items-center gap-2 text-sm text-muted-foreground"><Tag className="size-4" />{text.pattern}</dt>
+                  <dd className="text-right text-sm font-medium text-foreground">{domain.category}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-5 py-4">
+                  <dt className="flex items-center gap-2 text-sm text-muted-foreground"><ShieldCheck className="size-4" />{text.currentStatus}</dt>
+                  <dd>
+                    <Badge variant={isAvailable ? 'available' : domain.status === 'registered' ? 'registered' : 'pending'}>
+                      {statusLabel(locale, domain.status)}
+                    </Badge>
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-5 py-4">
+                  <dt className="flex items-center gap-2 text-sm text-muted-foreground"><Calendar className="size-4" />{text.checkedAt}</dt>
+                  <dd className="text-right font-mono text-xs text-foreground">
+                    {domain.updatedAt ? new Date(domain.updatedAt).toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US') : '—'}
+                  </dd>
+                </div>
+              </dl>
+
+              <section>
+                <p className="mb-2 flex items-center gap-2 font-mono text-xs text-muted-foreground"><Info className="size-3.5" />{text.whoisDetail}</p>
+                <pre className="max-h-56 overflow-auto rounded-lg border bg-primary p-4 font-mono text-xs leading-5 text-primary-foreground">
+                  {domain.detail || text.noDetail}
+                </pre>
+              </section>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-canvas-soft text-hairline-strong hover:text-ink transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
 
-          {/* Details list */}
-          <div className="space-y-5 text-sm">
-            <div className="bg-canvas-soft border border-hairline rounded-lg p-4">
-              <div className="text-xs font-mono text-hairline-strong mb-1">RARE PATTERN SCORE</div>
-              <div className="text-3xl font-extrabold font-mono text-brand-pink">{domain.score} / 100</div>
-              <div className="text-xs text-hairline-strong mt-1">{domain.patternDesc}</div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between py-2 border-b border-hairline">
-                <span className="text-hairline-strong flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-brand-blue" />
-                  模式分类
-                </span>
-                <span className="font-medium text-ink">{domain.category}</span>
-              </div>
-
-              <div className="flex items-center justify-between py-2 border-b border-hairline">
-                <span className="text-hairline-strong flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-brand-teal" />
-                  当前状态
-                </span>
-                <span
-                  className={`font-mono font-medium ${
-                    domain.status === 'available' ? 'text-brand-teal' : 'text-hairline-strong'
-                  }`}
+            <SheetFooter className="border-t px-6 py-5">
+              {isAvailable ? (
+                <a
+                  href={`https://www.namesilo.com/domain/search-domains?query=${domain.domain}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(buttonVariants({ size: 'lg' }), 'w-full')}
                 >
-                  {domain.status === 'available' ? '✅ 未注册 (可用)' : '已注册'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between py-2 border-b border-hairline">
-                <span className="text-hairline-strong flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-brand-violet" />
-                  最后核查时间
-                </span>
-                <span className="font-mono text-xs text-ink">
-                  {domain.updatedAt ? new Date(domain.updatedAt).toLocaleString() : '未扫描'}
-                </span>
-              </div>
-            </div>
-
-            {/* WHOIS Raw Detail */}
-            <div className="mt-6">
-              <div className="text-xs font-mono text-hairline-strong mb-2 flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5" />
-                <span>WHOIS 详细验证日志</span>
-              </div>
-              <div className="bg-ink text-white font-mono text-xs p-4 rounded-lg overflow-x-auto whitespace-pre-wrap max-h-48">
-                {domain.detail || '暂无详细响应日志'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer CTA */}
-        <div className="pt-6 border-t border-hairline mt-6">
-          {domain.status === 'available' ? (
-            <a
-              href={`https://www.namesilo.com/domain/search-domains?query=${domain.domain}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-pill bg-ink text-white font-medium text-sm hover:bg-black transition-all shadow-md"
-            >
-              <span>立即去注册 {domain.domain}</span>
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          ) : (
-            <div className="text-center text-xs text-hairline-strong font-mono py-2">
-              该域名已被注册，可定期关注释放状态
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                  {text.goRegister}
+                  <ExternalLink data-icon="inline-end" />
+                </a>
+              ) : (
+                <p className="text-center text-sm leading-6 text-muted-foreground">{text.unavailableMessage}</p>
+              )}
+            </SheetFooter>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 };

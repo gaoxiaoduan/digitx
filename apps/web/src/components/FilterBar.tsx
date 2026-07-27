@@ -1,21 +1,29 @@
 import React from 'react';
-import { Search, Filter, Flame, EyeOff } from 'lucide-react';
+import { EyeOff, Search } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { type Locale, copy } from '@/lib/copy';
 
 interface FilterBarProps {
+  locale: Locale;
   searchTerm: string;
-  setSearchTerm: (v: string) => void;
+  setSearchTerm: (value: string) => void;
   selectedLength: string;
-  setSelectedLength: (v: string) => void;
+  setSelectedLength: (value: string) => void;
   selectedCategory: string;
-  setSelectedCategory: (v: string) => void;
+  setSelectedCategory: (value: string) => void;
   excludeFour: boolean;
-  setExcludeFour: (v: boolean) => void;
+  setExcludeFour: (value: boolean) => void;
   statusFilter: string;
-  setStatusFilter: (v: string) => void;
+  setStatusFilter: (value: string) => void;
   categories: string[];
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
+  locale,
   searchTerm,
   setSearchTerm,
   selectedLength,
@@ -28,78 +36,89 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   setStatusFilter,
   categories
 }) => {
-  return (
-    <div className="bg-canvas border-b border-hairline sticky top-0 z-20 backdrop-blur-md bg-opacity-90">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Search Input */}
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-hairline-strong" />
-          <input
-            type="text"
-            placeholder="搜索数字模式 (例: 88, 1024)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-canvas-soft border border-hairline rounded-sm text-sm text-ink placeholder-hairline-strong focus:outline-none focus:border-ink transition-colors font-mono"
-          />
-        </div>
+  const text = copy[locale];
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto text-xs">
-          {/* Status Filter */}
-          <div className="flex items-center bg-canvas-soft border border-hairline rounded-sm p-0.5 font-mono">
-            {['all', 'available', 'registered'].map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1 rounded-sm capitalize transition-all ${
-                  statusFilter === st ? 'bg-ink text-white font-medium shadow-sm' : 'text-hairline-strong hover:text-ink'
-                }`}
-              >
-                {st === 'all' ? '全部状态' : st === 'available' ? '✅ 可注册' : '已注册'}
-              </button>
-            ))}
+  return (
+    <Card className="sticky top-20 z-20 bg-card/95 backdrop-blur-xl">
+      <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="w-full lg:max-w-md">
+            <label htmlFor="domain-search" className="sr-only">
+              {text.searchPlaceholder}
+            </label>
+            <InputGroup>
+              <InputGroupAddon>
+                <Search className="size-4" />
+              </InputGroupAddon>
+              <InputGroupInput
+                id="domain-search"
+                type="search"
+                placeholder={text.searchPlaceholder}
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </InputGroup>
           </div>
 
-          {/* Length Selector */}
-          <select
-            value={selectedLength}
-            onChange={(e) => setSelectedLength(e.target.value)}
-            className="bg-canvas-soft border border-hairline rounded-sm px-3 py-1.5 font-mono text-ink focus:outline-none focus:border-ink"
+          <ToggleGroup
+            type="single"
+            value={statusFilter}
+            onValueChange={(nextStatus) => {
+              if (nextStatus) setStatusFilter(nextStatus);
+            }}
+            variant="outline"
+            size="sm"
+            aria-label={text.status}
+            className="self-start lg:self-auto"
           >
-            <option value="all">任意长度</option>
-            <option value="6">6 位数字</option>
-            <option value="7">7 位数字</option>
-            <option value="8">8 位数字</option>
-          </select>
-
-          {/* Category Selector */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-canvas-soft border border-hairline rounded-sm px-3 py-1.5 text-ink focus:outline-none focus:border-ink"
-          >
-            <option value="all">所有靓号模式</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-
-          {/* Exclude 4 Toggle */}
-          <button
-            onClick={() => setExcludeFour(!excludeFour)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-sm transition-all font-mono ${
-              excludeFour
-                ? 'bg-brand-blue/10 border-brand-blue text-brand-blue font-medium'
-                : 'bg-canvas-soft border-hairline text-hairline-strong hover:text-ink'
-            }`}
-          >
-            <EyeOff className="w-3.5 h-3.5" />
-            <span>避讳数字4</span>
-          </button>
+            <ToggleGroupItem value="all">{text.status}</ToggleGroupItem>
+            <ToggleGroupItem value="available">{text.available}</ToggleGroupItem>
+            <ToggleGroupItem value="registered">{text.registered}</ToggleGroupItem>
+          </ToggleGroup>
         </div>
-      </div>
-    </div>
+
+        <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center">
+          <div className="grid flex-1 grid-cols-2 gap-3">
+            <Select value={selectedLength} onValueChange={setSelectedLength}>
+              <SelectTrigger aria-label={text.length}>
+                <SelectValue placeholder={text.length} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="all">{text.anyLength}</SelectItem>
+                  <SelectItem value="6">6 {locale === 'zh' ? '位数字' : 'digits'}</SelectItem>
+                  <SelectItem value="7">7 {locale === 'zh' ? '位数字' : 'digits'}</SelectItem>
+                  <SelectItem value="8">8 {locale === 'zh' ? '位数字' : 'digits'}</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger aria-label={text.category}>
+                <SelectValue placeholder={text.category} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="all">{text.allPatterns}</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <label className="flex h-10 shrink-0 cursor-pointer items-center justify-between gap-3 rounded-md border bg-background px-3 text-sm text-muted-foreground sm:min-w-40">
+            <span className="flex items-center gap-2">
+              <EyeOff className="size-4" />
+              {text.avoidFour}
+            </span>
+            <Switch checked={excludeFour} onCheckedChange={setExcludeFour} aria-label={text.avoidFour} />
+          </label>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

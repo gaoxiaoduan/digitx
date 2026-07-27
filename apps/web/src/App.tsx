@@ -1,168 +1,218 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { DomainRecord, DomainDatabase } from '@digitx/core';
-import { HeroBand } from './components/HeroBand';
-import { FilterBar } from './components/FilterBar';
-import { DomainTable } from './components/DomainTable';
-import { DetailSheet } from './components/DetailSheet';
-import { RefreshCw, Code2, Globe } from 'lucide-react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { DomainDatabase, DomainRecord } from '@digitx/core';
+import { Code2, Moon, RefreshCw, Sun } from 'lucide-react';
+import { DetailSheet } from '@/components/DetailSheet';
+import { DomainTable } from '@/components/DomainTable';
+import { FilterBar } from '@/components/FilterBar';
+import { HeroBand } from '@/components/HeroBand';
+import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { copy, type Locale } from '@/lib/copy';
+
+type Theme = 'light' | 'dark';
+
+const EMPTY_DATABASE: DomainDatabase = {
+  domains: {},
+  stats: { total: 0, checked: 0, unchecked: 0, available: 0, registered: 0, error: 0 },
+  config: { delay: 2000, exclude4: true, minLength: 6, maxLength: 8, minScore: 60, tld: '.xyz' }
+};
+
+function readStoredLocale(): Locale {
+  const storedLocale = window.localStorage.getItem('digitx.locale.v1');
+  return storedLocale === 'en' ? 'en' : 'zh';
+}
+
+function readStoredTheme(): Theme {
+  const storedTheme = window.localStorage.getItem('digitx.theme.v1');
+  return storedTheme === 'dark' ? 'dark' : 'light';
+}
 
 export const App: React.FC = () => {
-  const [data, setData] = useState<DomainDatabase>({
-    domains: {},
-    stats: { total: 0, checked: 0, unchecked: 0, available: 0, registered: 0, error: 0 },
-    config: { delay: 2000, exclude4: true, minLength: 6, maxLength: 8, minScore: 60, tld: '.xyz' }
-  });
+  const [data, setData] = useState<DomainDatabase>(EMPTY_DATABASE);
   const [loading, setLoading] = useState(true);
+  const [locale, setLocale] = useState<Locale>(readStoredLocale);
+  const [theme, setTheme] = useState<Theme>(readStoredTheme);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLength, setSelectedLength] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [excludeFour, setExcludeFour] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedDomain, setSelectedDomain] = useState<DomainRecord | null>(null);
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+  const text = copy[locale];
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/domains');
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
+      const response = await fetch('/api/domains');
+      if (response.ok) {
+        setData(await response.json());
       }
-    } catch (err) {
-      console.warn('Failed to fetch from API, falling back to local dataset...');
+    } catch (error) {
+      console.warn('Failed to load domain data.', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
-  const domainList = useMemo(() => {
-    return Object.values(data.domains || {});
-  }, [data]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    window.localStorage.setItem('digitx.theme.v1', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.lang = locale === 'zh' ? 'zh-CN' : 'en';
+    window.localStorage.setItem('digitx.locale.v1', locale);
+  }, [locale]);
+
+  const domainList = useMemo(() => Object.values(data.domains), [data]);
 
   const categories = useMemo(() => {
-    const set = new Set<string>();
-    domainList.forEach((d) => {
-      if (d.category) set.add(d.category);
-    });
-    return Array.from(set);
+    const categorySet = new Set<string>();
+    for (const domain of domainList) {
+      if (domain.category) categorySet.add(domain.category);
+    }
+    return Array.from(categorySet);
   }, [domainList]);
 
-  const filteredDomains = useMemo(() => {
-    return domainList.filter((d) => {
-      // Search
-      if (searchTerm && !d.domain.includes(searchTerm) && !d.patternDesc.includes(searchTerm)) {
-        return false;
-      }
-      // Status
-      if (statusFilter !== 'all' && d.status !== statusFilter) {
-        return false;
-      }
-      // Length
-      if (selectedLength !== 'all' && String(d.number.length) !== selectedLength) {
-        return false;
-      }
-      // Category
-      if (selectedCategory !== 'all' && d.category !== selectedCategory) {
-        return false;
-      }
-      // Exclude 4
-      if (excludeFour && d.number.includes('4')) {
-
-        const allowed4s = ['1024', '2048', '4096', '404'];
-        let hasUnlucky = true;
-        for (const allowed of allowed4s) {
-          if (d.number.includes(allowed)) {
-            hasUnlucky = false;
-            break;
-          }
+  const filteredDomains = useMemo(
+    () =>
+      domainList.filter((domain) => {
+        if (
+          deferredSearchTerm &&
+          !domain.domain.includes(deferredSearchTerm) &&
+          !domain.patternDesc.includes(deferredSearchTerm)
+        ) {
+          return false;
         }
-        if (hasUnlucky) return false;
-      }
-      return true;
-    });
-  }, [domainList, searchTerm, statusFilter, selectedLength, selectedCategory, excludeFour]);
+        if (statusFilter !== 'all' && domain.status !== statusFilter) return false;
+        if (selectedLength !== 'all' && String(domain.number.length) !== selectedLength) return false;
+        if (selectedCategory !== 'all' && domain.category !== selectedCategory) return false;
+
+        if (excludeFour && domain.number.includes('4')) {
+          const allowedPatterns = ['1024', '2048', '4096', '404'];
+          if (!allowedPatterns.some((pattern) => domain.number.includes(pattern))) return false;
+        }
+
+        return true;
+      }),
+    [deferredSearchTerm, domainList, excludeFour, selectedCategory, selectedLength, statusFilter]
+  );
+
+  const toggleTheme = () => setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'));
 
   return (
-    <div className="min-h-screen flex flex-col bg-canvas-soft text-ink font-sans">
-      {/* Header Bar */}
-      <header className="bg-canvas border-b border-hairline px-6 py-3 flex items-center justify-between z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-sm bg-ink text-white flex items-center justify-center font-mono font-bold text-sm">
-            D
+    <TooltipProvider delayDuration={250}>
+      <div className="min-h-screen bg-background text-foreground">
+        <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur-xl">
+          <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+            <a href="/" className="flex items-center gap-2.5" aria-label="DIGITX home">
+              <span className="flex size-8 items-center justify-center rounded-md bg-primary font-mono text-sm font-medium text-primary-foreground">
+                D
+              </span>
+              <span className="text-sm font-semibold tracking-tight">DIGITX</span>
+            </a>
+
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={fetchData} disabled={loading} aria-label={text.refresh}>
+                    <RefreshCw className={loading ? 'animate-spin' : undefined} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{text.refresh}</TooltipContent>
+              </Tooltip>
+
+              <div className="mx-1 hidden h-5 w-px bg-border sm:block" />
+
+              <ToggleGroup
+                type="single"
+                value={locale}
+                onValueChange={(nextLocale) => {
+                  if (nextLocale === 'zh' || nextLocale === 'en') setLocale(nextLocale);
+                }}
+                variant="outline"
+                size="sm"
+                aria-label={text.language}
+              >
+                <ToggleGroupItem value="zh" aria-label="中文">
+                  中
+                </ToggleGroupItem>
+                <ToggleGroupItem value="en" aria-label="English">
+                  EN
+                </ToggleGroupItem>
+              </ToggleGroup>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={theme === 'light' ? text.darkMode : text.lightMode}>
+                    {theme === 'light' ? <Moon /> : <Sun />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{theme === 'light' ? text.darkMode : text.lightMode}</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button asChild variant="ghost" size="icon">
+                    <a
+                      href="https://github.com/gaoxiaoduan/digitx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={text.github}
+                    >
+                      <Code2 />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{text.github}</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
-          <span className="font-semibold tracking-tight text-ink text-sm">DIGITX</span>
-          <span className="px-2 py-0.5 rounded-full bg-canvas-soft border border-hairline text-[10px] font-mono text-hairline-strong">
-            v2.0 TS
-          </span>
-        </div>
+        </header>
 
-        <div className="flex items-center gap-3 text-xs">
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill bg-canvas border border-hairline hover:bg-canvas-soft transition-colors font-mono text-ink"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>刷新数据</span>
-          </button>
-          <a
-            href="https://github.com/gaoxiaoduan/digitx"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:flex items-center gap-1 text-hairline-strong hover:text-ink transition-colors font-mono"
-          >
-            <Code2 className="w-4 h-4" />
-            <span>GitHub</span>
-          </a>
-        </div>
-      </header>
+        <HeroBand stats={data.stats} locale={locale} />
 
-      {/* Hero Band */}
-      <HeroBand stats={data.stats} />
+        <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
+          <FilterBar
+            locale={locale}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedLength={selectedLength}
+            setSelectedLength={setSelectedLength}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            excludeFour={excludeFour}
+            setExcludeFour={setExcludeFour}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            categories={categories}
+          />
 
-      {/* Filter Bar */}
-      <FilterBar
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        selectedLength={selectedLength}
-        setSelectedLength={setSelectedLength}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        excludeFour={excludeFour}
-        setExcludeFour={setExcludeFour}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        categories={categories}
-      />
+          <section aria-label={text.domains}>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-mono text-xs text-muted-foreground">
+                {text.showing} <span className="font-medium text-foreground">{filteredDomains.length}</span> {text.domains}
+              </p>
+              <p className="hidden font-mono text-xs text-muted-foreground sm:block">{data.config.tld.toUpperCase()}</p>
+            </div>
+            <DomainTable domains={filteredDomains} locale={locale} onSelectDomain={setSelectedDomain} />
+          </section>
+        </main>
 
-      {/* Table Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-xs font-mono text-hairline-strong">
-            SHOWING <span className="font-bold text-ink">{filteredDomains.length}</span> DOMAINS
+        <footer className="border-t bg-card">
+          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+            <p className="font-mono text-xs text-muted-foreground">{text.footer}</p>
           </div>
-        </div>
+        </footer>
 
-        <div className="bg-canvas border border-hairline rounded-lg stacked-shadow overflow-hidden">
-          <DomainTable domains={filteredDomains} onSelectDomain={(d) => setSelectedDomain(d)} />
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-canvas border-t border-hairline py-8 px-6 text-center text-xs text-hairline-strong font-mono">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Globe className="w-4 h-4 text-brand-teal" />
-          <span>DIGITX - High-Performance Numeric Domain Engine</span>
-        </div>
-        <p>© 2026 DIGITX. Deployed on Cloudflare Pages & Workers.</p>
-      </footer>
-
-      {/* Detail Sheet */}
-      <DetailSheet domain={selectedDomain} onClose={() => setSelectedDomain(null)} />
-    </div>
+        <DetailSheet locale={locale} domain={selectedDomain} onClose={() => setSelectedDomain(null)} />
+      </div>
+    </TooltipProvider>
   );
 };
