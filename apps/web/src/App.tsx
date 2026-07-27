@@ -18,6 +18,9 @@ const EMPTY_DATABASE: DomainDatabase = {
   config: { delay: 2000, exclude4: true, minLength: 6, maxLength: 8, minScore: 60, tld: '.xyz' }
 };
 
+const API_ORIGIN = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? '';
+const DOMAINS_ENDPOINT = `${API_ORIGIN}/api/domains`;
+
 function readStoredLocale(): Locale {
   const storedLocale = window.localStorage.getItem('digitx.locale.v1');
   return storedLocale === 'en' ? 'en' : 'zh';
@@ -45,7 +48,7 @@ export const App: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/domains');
+      const response = await fetch(DOMAINS_ENDPOINT);
       if (response.ok) {
         setData(await response.json());
       }

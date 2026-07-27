@@ -22,3 +22,5 @@ Thumbs.db
 .idea
 
 .wrangler
+.dev.vars
+apps/api/worker-configuration.d.ts
