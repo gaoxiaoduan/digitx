@@ -52,7 +52,11 @@ export const copy = {
     noDetail: '暂无详细验证记录',
     goRegister: '注册此域名',
     unavailableMessage: '该域名已注册，可持续关注其释放状态。',
-    footer: '数字域名验证工作台 · 由 Cloudflare Pages 与 Workers 提供支持。'
+    footer: '数字域名验证工作台 · 由 Cloudflare Pages 与 Workers 提供支持。',
+    showingRange: (start: number, end: number, total: number) => `显示 ${start} - ${end} / 共 ${total} 条`,
+    perPage: '条/页',
+    previousPage: '上一页',
+    nextPage: '下一页'
   },
   en: {
     refresh: 'Refresh data',
@@ -103,7 +107,11 @@ export const copy = {
     noDetail: 'No verification record yet',
     goRegister: 'Register this domain',
     unavailableMessage: 'This domain is registered. Watch for a future release.',
-    footer: 'Numeric domain verification workbench · Powered by Cloudflare Pages and Workers.'
+    footer: 'Numeric domain verification workbench · Powered by Cloudflare Pages and Workers.',
+    showingRange: (start: number, end: number, total: number) => `Showing ${start}-${end} of ${total}`,
+    perPage: 'per page',
+    previousPage: 'Previous',
+    nextPage: 'Next'
   }
 } as const;
 

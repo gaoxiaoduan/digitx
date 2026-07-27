@@ -3,17 +3,52 @@ import { DomainRecord } from '@digitx/core';
 import { CheckCircle2, ChevronRight, ExternalLink, HelpCircle, ScanLine } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
+} from '@/components/ui/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type Locale, copy, statusLabel } from '@/lib/copy';
 import { cn } from '@/lib/utils';
 
 interface DomainTableProps {
   domains: DomainRecord[];
   locale: Locale;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
   onSelectDomain: (domain: DomainRecord) => void;
 }
 
-export const DomainTable: React.FC<DomainTableProps> = ({ domains, locale, onSelectDomain }) => {
+function getPageNumbers(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, 'ellipsis', totalPages];
+  }
+  if (currentPage >= totalPages - 3) {
+    return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+  return [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', totalPages];
+}
+
+export const DomainTable: React.FC<DomainTableProps> = ({
+  domains,
+  locale,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  onSelectDomain
+}) => {
   const text = copy[locale];
 
   if (domains.length === 0) {
@@ -27,6 +62,13 @@ export const DomainTable: React.FC<DomainTableProps> = ({ domains, locale, onSel
       </Card>
     );
   }
+
+  const totalItems = domains.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const pageDomains = domains.slice(startIndex, endIndex);
 
   return (
     <Card className="overflow-hidden">
@@ -44,7 +86,7 @@ export const DomainTable: React.FC<DomainTableProps> = ({ domains, locale, onSel
               </tr>
             </thead>
             <tbody className="divide-y bg-card">
-              {domains.map((domain) => {
+              {pageDomains.map((domain) => {
                 const isAvailable = domain.status === 'available';
                 const badgeVariant = isAvailable ? 'available' : domain.status === 'registered' ? 'registered' : 'pending';
 
@@ -102,6 +144,64 @@ export const DomainTable: React.FC<DomainTableProps> = ({ domains, locale, onSel
           </table>
         </div>
       </CardContent>
+
+      <CardFooter className="flex flex-col items-center justify-between gap-4 border-t bg-muted/20 px-5 py-3.5 sm:flex-row">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="font-mono">
+            {text.showingRange(totalItems > 0 ? startIndex + 1 : 0, endIndex, totalItems)}
+          </span>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-1.5">
+            <Select value={String(pageSize)} onValueChange={(val) => onPageSizeChange(Number(val))}>
+              <SelectTrigger className="h-7 w-24 text-xs font-mono">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25" className="text-xs font-mono">25 {text.perPage}</SelectItem>
+                <SelectItem value="50" className="text-xs font-mono">50 {text.perPage}</SelectItem>
+                <SelectItem value="100" className="text-xs font-mono">100 {text.perPage}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {totalPages > 1 && (
+          <Pagination className="mx-0 w-auto">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  disabled={safePage <= 1}
+                  onClick={() => safePage > 1 && onPageChange(safePage - 1)}
+                  label={text.previousPage}
+                />
+              </PaginationItem>
+
+              {getPageNumbers(safePage, totalPages).map((p, idx) => (
+                <PaginationItem key={typeof p === 'number' ? p : `ellipsis-${idx}`}>
+                  {typeof p === 'number' ? (
+                    <PaginationLink
+                      isActive={p === safePage}
+                      onClick={() => onPageChange(p)}
+                    >
+                      {p}
+                    </PaginationLink>
+                  ) : (
+                    <PaginationEllipsis />
+                  )}
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  disabled={safePage >= totalPages}
+                  onClick={() => safePage < totalPages && onPageChange(safePage + 1)}
+                  label={text.nextPage}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </CardFooter>
     </Card>
   );
 };

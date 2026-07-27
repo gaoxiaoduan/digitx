@@ -41,9 +41,15 @@ export const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [excludeFour, setExcludeFour] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [selectedDomain, setSelectedDomain] = useState<DomainRecord | null>(null);
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const text = copy[locale];
+
+  useEffect(() => {
+    setPage(1);
+  }, [deferredSearchTerm, statusFilter, selectedLength, selectedCategory, excludeFour]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -204,7 +210,15 @@ export const App: React.FC = () => {
               </p>
               <p className="hidden font-mono text-xs text-muted-foreground sm:block">{data.config.tld.toUpperCase()}</p>
             </div>
-            <DomainTable domains={filteredDomains} locale={locale} onSelectDomain={setSelectedDomain} />
+            <DomainTable
+              domains={filteredDomains}
+              locale={locale}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              onSelectDomain={setSelectedDomain}
+            />
           </section>
         </main>
 
