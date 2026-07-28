@@ -16,6 +16,7 @@
     "cli": "pnpm --filter @digitx/scanner cli",
     "scan": "pnpm --filter @digitx/core build && pnpm --filter @digitx/scanner scan",
     "scan:local": "DIGITX_DB_PATH=domains_db.local.json SCAN_MAX_CANDIDATES=10 SCAN_MAX_WHOIS_PER_RUN=3 pnpm scan",
+    "test": "pnpm --filter @digitx/core test",
     "check-types": "pnpm --recursive run check-types"
   },
   "devDependencies": {
