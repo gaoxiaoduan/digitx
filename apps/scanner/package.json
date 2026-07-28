@@ -6,6 +6,7 @@
   "scripts": {
     "cli": "tsx src/cli.ts",
     "scan": "tsx src/cron_scan.ts",
+    "test": "tsx --test test/**/*.test.ts",
     "build": "tsc",
     "check-types": "tsc --noEmit"
   },
