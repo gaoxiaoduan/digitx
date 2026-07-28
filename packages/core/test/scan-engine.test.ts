@@ -50,7 +50,7 @@ test('Blind Scan marks active Numeric Domains registered without WHOIS Verificat
   assert.equal(whoisCalls.length, 0);
   assert.equal(outcome.blindScan.registered, 1);
   assert.equal(outcome.whois.attempted, 0);
-  assert.equal(checkpoints.length, 2);
+  assert.equal(checkpoints.length, 1);
   assert.deepEqual(outcome.database.stats, {
     total: 1,
     checked: 1,
@@ -92,8 +92,9 @@ test('WHOIS Verification records availability, errors, default throttle, progres
     'whois-verification:1/2',
     'whois-verification:2/2'
   ]);
-  assert.equal(checkpoints.length, 2);
-  assert.equal(checkpoints[1].domains['999999.xyz'].status, 'error');
+  assert.equal(checkpoints.length, 3);
+  assert.equal(checkpoints[1].domains['666666.xyz'].status, 'available');
+  assert.equal(checkpoints[2].domains['999999.xyz'].status, 'error');
   assert.deepEqual(outcome.database.stats, {
     total: 2,
     checked: 1,
@@ -187,6 +188,29 @@ test('Scan policy never reduces the 2000ms WHOIS safety throttle', () => {
   assert.equal(resolveScanPolicy({ whoisDelayMs: 5000 }).whoisDelayMs, 5000);
 });
 
+test('Scan policy accepts an explicit unlimited WHOIS Verification selection', () => {
+  assert.equal(resolveScanPolicy({ maxWhois: null }).maxWhois, null);
+});
+
+test('WHOIS Verification checkpoints an error before advancing to the next Numeric Domain', async () => {
+  const checkpoints: DomainDatabase[] = [];
+
+  await runScanBatch(databaseWith('111111.xyz', '222222.xyz'), {}, {
+    dns: { isRegistered: async () => false },
+    whois: {
+      verify: async (domain) => {
+        if (domain === '111111.xyz') throw new Error('temporary WHOIS failure');
+        assert.equal(checkpoints.at(-1)?.domains['111111.xyz'].status, 'error');
+        return { registered: false, detail: 'Available' };
+      }
+    },
+    timing: { sleep: async () => undefined },
+    checkpoint: { save: async (database) => checkpoints.push(structuredClone(database)) }
+  });
+
+  assert.equal(checkpoints.at(-1)?.domains['222222.xyz'].status, 'available');
+});
+
 test('Fake adapters record a complete Scan Engine run without network, files, or real time', async () => {
   const dependencies = createFakeScanDependencies({
     dns: { isRegistered: async () => false },
@@ -198,7 +222,7 @@ test('Fake adapters record a complete Scan Engine run without network, files, or
   assert.deepEqual(dependencies.dnsCalls, ['888888.xyz', '999999.xyz']);
   assert.deepEqual(dependencies.whoisCalls, ['888888.xyz', '999999.xyz']);
   assert.deepEqual(dependencies.delays, [2000]);
-  assert.equal(dependencies.checkpoints.length, 2);
+  assert.equal(dependencies.checkpoints.length, 3);
   assert.equal(dependencies.progressEvents.length, 4);
   assert.equal(outcome.database.stats.available, 2);
 });

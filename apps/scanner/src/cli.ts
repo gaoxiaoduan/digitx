@@ -5,12 +5,14 @@ import ora from 'ora';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  createFileCheckpointAdapter,
   generateCandidates,
-  checkDNS,
-  checkWHOIS,
-  updateDomainStatus,
+  nodeDNSAdapter,
+  nodeTimingAdapter,
+  nodeWHOISAdapter,
   recalculateStats,
-  DomainDatabase
+  runScanBatch,
+  type DomainDatabase
 } from '@digitx/core';
 
 const DB_PATH = path.resolve(process.cwd(), 'domains_db.json');
@@ -86,37 +88,27 @@ async function main() {
     const unchecked = Object.values(db.domains).filter((d) => d.status === 'unchecked');
     console.log(chalk.yellow(`Scanning ${unchecked.length} unchecked domains...`));
 
-    const spinner = ora('Running DNS blind scan...').start();
-    for (const item of unchecked) {
-      const active = await checkDNS(item.domain);
-      if (active) {
-        updateDomainStatus(db, item.domain, 'registered', '已注册 (DNS: 检测到 NS 解析)');
-      }
-    }
-    saveDB(db);
-    spinner.succeed('DNS Blind Scan completed!');
-
-    const remaining = Object.values(db.domains).filter((d) => d.status === 'unchecked');
-    console.log(chalk.cyan(`Running WHOIS verification on ${remaining.length} suspected available domains...`));
-
-    for (const item of remaining) {
-      const whoisSpinner = ora(`Verifying ${item.domain}...`).start();
-      try {
-        const res = await checkWHOIS(item.domain);
-        if (res.registered) {
-          updateDomainStatus(db, item.domain, 'registered', res.detail);
-          whoisSpinner.fail(chalk.red(`${item.domain} - Registered`));
-        } else {
-          updateDomainStatus(db, item.domain, 'available', res.detail);
-          whoisSpinner.succeed(chalk.green.bold(`${item.domain} - AVAILABLE!`));
+    const spinner = ora('Starting Scan Engine...').start();
+    const outcome = await runScanBatch(
+      db,
+      { maxWhois: null, whoisDelayMs: db.config.delay },
+      {
+        dns: nodeDNSAdapter,
+        whois: nodeWHOISAdapter,
+        timing: nodeTimingAdapter,
+        checkpoint: createFileCheckpointAdapter(DB_PATH),
+        progress: {
+          report: ({ stage, processed, total, domain }) => {
+            const label = stage === 'blind-scan' ? 'DNS Blind Scan' : 'WHOIS Verification';
+            spinner.text = `${label} ${processed}/${total}: ${domain}`;
+          }
         }
-        saveDB(db);
-      } catch (err: any) {
-        updateDomainStatus(db, item.domain, 'error', err.message);
-        whoisSpinner.warn(chalk.yellow(`${item.domain} - Error: ${err.message}`));
       }
-      await new Promise((r) => setTimeout(r, db.config.delay || 2000));
-    }
+    );
+
+    const summary = `Scan Engine finished: ${outcome.blindScan.registered} DNS registered, ${outcome.whois.available} available, ${outcome.whois.errors} errors.`;
+    if (outcome.whois.errors > 0) spinner.warn(chalk.yellow(summary));
+    else spinner.succeed(summary);
   } else if (action === 'list') {
     const availableList = Object.values(db.domains).filter((d) => d.status === 'available');
     console.log(chalk.green.bold(`\nAvailable Domains (${availableList.length}):`));

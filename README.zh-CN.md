@@ -13,7 +13,7 @@ flowchart LR
   Web["React + Vite SPA"] -->|"GET /api/domains"| API
 ```
 
-- `packages/core`：类型安全的候选生成、DNS/WHOIS 检查和数据库工具。
+- `packages/core`：类型安全的候选生成、deep Scan Engine、DNS/WHOIS adapter 和数据库工具。
 - `apps/scanner`：本地交互式 CLI 与定时批量扫描器。
 - `apps/api`：使用 Cloudflare KV 的 Hono Worker API。
 - `apps/web`：基于 React、Vite、Tailwind 与 shadcn/ui 的前端。
@@ -28,6 +28,7 @@ flowchart LR
 
 ```bash
 pnpm install
+pnpm test
 pnpm check-types
 pnpm build
 ```
@@ -64,7 +65,7 @@ pnpm dev:api
 
 ## 使用安全
 
-扫描器分为两步：并发 DNS 过滤，然后节流执行 WHOIS 验证。请保留默认 2000ms WHOIS 延时，避免触发限流或被注册局封禁 IP。
+Scan Engine 负责两阶段流程：并发 Blind Scan，然后节流执行 WHOIS Verification。CLI 与定时扫描器仅作为提供配置和进度反馈的 adapter。WHOIS 延时具有 2000ms 安全下限，调用方配置不能将其降低，避免触发限流或被注册局封禁 IP。
 
 ## 许可证
 

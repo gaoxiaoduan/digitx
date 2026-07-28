@@ -13,13 +13,14 @@ The project is a pnpm TypeScript monorepo:
 - **`packages/core`**: Shared, typed generator, DNS/WHOIS checker, and domain database utilities.
 
 ## 3. The Scanning Engine (Dual-Channel)
-`packages/core/src/checker.ts` performs validation in two stages:
+`packages/core/src/scan-engine.ts` owns validation in two stages; `checker.ts` provides the DNS/WHOIS implementation used by its production adapters:
 1. **Stage 1 (DNS Blind Scan)**: Concurrent NS-record lookups filter actively used domains without querying WHOIS.
 2. **Stage 2 (WHOIS Verification)**: The remaining domains are verified through WHOIS. Keep the default 2000ms throttle to avoid registry IP bans.
 
 ## 4. Key Files & Structure
 - **`packages/core/src/generator.ts`**: Generates and scores premium numeric-domain candidates.
-- **`packages/core/src/checker.ts`**: DNS/WHOIS validation and typed database helpers.
+- **`packages/core/src/scan-engine.ts`**: Deep Scan Engine interface, scan policy, checkpoint/progress seams, and production/fake adapters.
+- **`packages/core/src/checker.ts`**: DNS/WHOIS implementation and typed database helpers.
 - **`apps/scanner/src/cli.ts`**: Interactive local scanner.
 - **`apps/scanner/src/cron_scan.ts`**: Scheduled batch scanner and API sync client.
 - **`apps/api/src/index.ts`**: Hono Worker routes and KV access.
@@ -30,7 +31,7 @@ The project is a pnpm TypeScript monorepo:
 - **UI aesthetics**: Follow `DESIGN.md` and the established Tailwind design tokens in `apps/web`; the approved direction is Vercel-style near-white surfaces and ink text.
 - **Cloud data flow**: Cloudflare KV is the production source of truth. `domains_db.json` is an ignored local scanner checkpoint only; never commit it.
 - **Build commands**: Use `pnpm check-types`, `pnpm build`, `pnpm cli`, and `pnpm scan` from the repository root.
-- **Throttling is critical**: Never bypass the WHOIS delay in `packages/core/src/checker.ts` or `apps/scanner/src/cron_scan.ts`.
+- **Throttling is critical**: Never bypass the 2000ms WHOIS delay floor in `packages/core/src/scan-engine.ts`; CLI and scheduled scanner adapters must not reimplement it.
 
 ## Agent skills
 

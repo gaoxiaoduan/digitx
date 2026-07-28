@@ -13,7 +13,7 @@ flowchart LR
   Web["React + Vite SPA"] -->|"GET /api/domains"| API
 ```
 
-- `packages/core` — typed candidate generator, DNS/WHOIS checker, and database helpers.
+- `packages/core` — typed candidate generator, deep Scan Engine, DNS/WHOIS adapters, and database helpers.
 - `apps/scanner` — interactive CLI and scheduled batch scanner.
 - `apps/api` — Hono Cloudflare Worker with KV storage.
 - `apps/web` — React, Vite, Tailwind, and shadcn/ui frontend.
@@ -28,6 +28,7 @@ flowchart LR
 
 ```bash
 pnpm install
+pnpm test
 pnpm check-types
 pnpm build
 ```
@@ -64,7 +65,7 @@ pnpm dev:api
 
 ## Safety
 
-The scanner uses a two-stage process: a concurrent DNS filter followed by throttled WHOIS verification. Keep the default WHOIS delay (2000ms) to avoid rate limiting or registry IP bans.
+The Scan Engine owns the two-stage process: a concurrent Blind Scan followed by throttled WHOIS Verification. The CLI and scheduled scanner are adapters that only supply configuration and progress reporting. The WHOIS delay has a 2000ms safety floor; it cannot be reduced by caller configuration.
 
 ## License
 

@@ -1,20 +1,25 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  createConsoleProgressAdapter,
+  createFileCheckpointAdapter,
   generateCandidates,
-  checkDNS,
-  checkWHOIS,
-  updateDomainStatus,
+  nodeDNSAdapter,
+  nodeTimingAdapter,
+  nodeWHOISAdapter,
   recalculateStats,
-  DomainDatabase
+  runScanBatch,
+  type DomainDatabase
 } from '@digitx/core';
 
 function readPositiveInteger(name: string, fallback: number): number {
   const rawValue = process.env[name];
   if (!rawValue) return fallback;
 
-  const value = Number.parseInt(rawValue, 10);
-  if (Number.isSafeInteger(value) && value > 0) return value;
+  if (/^[1-9]\d*$/.test(rawValue)) {
+    const value = Number(rawValue);
+    if (Number.isSafeInteger(value)) return value;
+  }
 
   console.warn(`Ignoring invalid ${name}=${rawValue}; using ${fallback}.`);
   return fallback;
@@ -24,6 +29,7 @@ const DB_PATH = path.resolve(process.cwd(), process.env.DIGITX_DB_PATH || 'domai
 const API_URL = process.env.API_URL || 'http://localhost:8787';
 const SYNC_SECRET = process.env.SYNC_SECRET || 'digitx-sync-secret-default';
 const MAX_CANDIDATES = readPositiveInteger('SCAN_MAX_CANDIDATES', Number.MAX_SAFE_INTEGER);
+const DNS_CONCURRENCY = readPositiveInteger('SCAN_DNS_CONCURRENCY', 50);
 const MAX_WHOIS_PER_RUN = readPositiveInteger('SCAN_MAX_WHOIS_PER_RUN', 50);
 
 function loadDatabase(): DomainDatabase {
@@ -98,57 +104,26 @@ async function runScan() {
   const db = loadDatabase();
   console.log(`Starting scan batch. Total domains: ${db.stats.total}, Unchecked: ${db.stats.unchecked}`);
 
-  const uncheckedList = Object.values(db.domains).filter((d) => d.status === 'unchecked');
-
-  if (uncheckedList.length > 0) {
-    console.log(`🚀 Phase 1: High-concurrency DNS Blind Check on ${uncheckedList.length} domains...`);
-    const concurrency = 50;
-    let index = 0;
-
-    while (index < uncheckedList.length) {
-      const chunk = uncheckedList.slice(index, index + concurrency);
-      await Promise.all(
-        chunk.map(async (item) => {
-          const isRegistered = await checkDNS(item.domain);
-          if (isRegistered) {
-            updateDomainStatus(db, item.domain, 'registered', '已注册 (DNS: 检测到活跃 NS 解析)');
-          }
-        })
-      );
-      index += concurrency;
-      console.log(`DNS Progress: ${Math.min(index, uncheckedList.length)}/${uncheckedList.length}`);
+  const outcome = await runScanBatch(
+    db,
+    {
+      dnsConcurrency: DNS_CONCURRENCY,
+      maxWhois: MAX_WHOIS_PER_RUN,
+      whoisDelayMs: db.config.delay
+    },
+    {
+      dns: nodeDNSAdapter,
+      whois: nodeWHOISAdapter,
+      timing: nodeTimingAdapter,
+      checkpoint: createFileCheckpointAdapter(DB_PATH),
+      progress: createConsoleProgressAdapter((message) => console.log(`Scan Engine ${message}`))
     }
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
-  }
+  );
 
-  const remaining = Object.values(db.domains).filter((d) => d.status === 'unchecked');
-  console.log(`🚀 Phase 2: WHOIS Verification on ${remaining.length} suspected available domains...`);
-
-  // Process batch of WHOIS
-  let count = 0;
-
-  for (const item of remaining) {
-    if (count >= MAX_WHOIS_PER_RUN) break;
-    count++;
-    console.log(`[${count}/${MAX_WHOIS_PER_RUN}] Verifying WHOIS for ${item.domain}...`);
-    try {
-      const res = await checkWHOIS(item.domain);
-      if (res.registered) {
-        updateDomainStatus(db, item.domain, 'registered', res.detail);
-      } else {
-        updateDomainStatus(db, item.domain, 'available', res.detail);
-        console.log(`✨ FOUND AVAILABLE DOMAIN: ${item.domain}!`);
-      }
-    } catch (err: any) {
-      updateDomainStatus(db, item.domain, 'error', err.message);
-    }
-    // Rate limit delay
-    await new Promise((resolve) => setTimeout(resolve, db.config.delay || 2000));
-  }
-
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
-  await syncToCloudflare(db);
-  console.log('Batch scan finished successfully.');
+  await syncToCloudflare(outcome.database);
+  console.log(
+    `Batch scan finished: ${outcome.blindScan.registered} DNS registered, ${outcome.whois.available} available, ${outcome.whois.errors} errors.`
+  );
 }
 
 runScan().catch((err) => {

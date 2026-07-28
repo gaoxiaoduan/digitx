@@ -39,7 +39,7 @@ export interface ScanDependencies {
 
 export interface ScanPolicy {
   dnsConcurrency?: number;
-  maxWhois?: number;
+  maxWhois?: number | null;
   whoisDelayMs?: number;
 }
 
@@ -87,7 +87,7 @@ function positiveSafeInteger(value: number | undefined, name: string): number | 
 
 export function resolveScanPolicy(policy: ScanPolicy = {}): ResolvedScanPolicy {
   const dnsConcurrency = positiveSafeInteger(policy.dnsConcurrency, 'dnsConcurrency') ?? DEFAULT_DNS_CONCURRENCY;
-  const maxWhois = positiveSafeInteger(policy.maxWhois, 'maxWhois') ?? null;
+  const maxWhois = policy.maxWhois === null ? null : positiveSafeInteger(policy.maxWhois, 'maxWhois') ?? null;
   const requestedWhoisDelay = positiveSafeInteger(policy.whoisDelayMs, 'whoisDelayMs') ?? DEFAULT_WHOIS_DELAY_MS;
   const whoisDelayMs = Math.max(DEFAULT_WHOIS_DELAY_MS, requestedWhoisDelay);
 
@@ -151,6 +151,9 @@ export async function runScanBatch(
       whoisErrors += 1;
     }
 
+    recalculateStats(database);
+    await dependencies.checkpoint.save(database);
+
     await dependencies.progress?.report({
       stage: 'whois-verification',
       processed: index + 1,
@@ -158,9 +161,6 @@ export async function runScanBatch(
       domain: domain.domain
     });
   }
-
-  recalculateStats(database);
-  await dependencies.checkpoint.save(database);
 
   return {
     database,

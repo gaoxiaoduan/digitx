@@ -13,13 +13,14 @@ DIGITX 是一个高性能的“双通道域名检索引擎”，专门用于挖�
 - **`packages/core`**：共享的类型安全候选生成、DNS/WHOIS 检查及域名数据库工具。
 
 ## 3. 扫描引擎 (双通道机制)
-`packages/core/src/checker.ts` 将验证分为两步：
+`packages/core/src/scan-engine.ts` 负责两阶段验证；`checker.ts` 提供其生产 adapter 使用的 DNS/WHOIS implementation：
 1. **第一阶段 (DNS 极速盲查)**：并发查询 NS 记录，不请求 WHOIS，快速滤掉已使用的域名。
 2. **第二阶段 (WHOIS 权威核对)**：检查剩余的疑似未注册域名。**必须保留默认 2000ms 节流**，避免注册局封禁扫描 IP。
 
 ## 4. 关键文件与目录结构
 - **`packages/core/src/generator.ts`**：生成和评分高价值纯数字域名候选。
-- **`packages/core/src/checker.ts`**：DNS/WHOIS 验证及类型化数据库工具。
+- **`packages/core/src/scan-engine.ts`**：deep Scan Engine interface、扫描策略、checkpoint/progress seam 及生产/fake adapter。
+- **`packages/core/src/checker.ts`**：DNS/WHOIS implementation 及类型化数据库工具。
 - **`apps/scanner/src/cli.ts`**：本地交互式扫描器。
 - **`apps/scanner/src/cron_scan.ts`**：定时批处理扫描器及 API 同步客户端。
 - **`apps/api/src/index.ts`**：Hono Worker 路由与 KV 访问。
@@ -30,4 +31,4 @@ DIGITX 是一个高性能的“双通道域名检索引擎”，专门用于挖�
 - **UI 视觉规范**：遵循 `DESIGN.md` 和 `apps/web` 中的 Tailwind 设计令牌；当前视觉方向为 Vercel 风格的近白背景与墨黑文字。
 - **云端数据流**：Cloudflare KV 是生产环境唯一数据源。`domains_db.json` 仅为本地扫描检查点，已被忽略，绝不能提交。
 - **构建命令**：在仓库根目录使用 `pnpm check-types`、`pnpm build`、`pnpm cli` 和 `pnpm scan`。
-- **节流底线不可碰**：绝对不要在 `packages/core/src/checker.ts` 或 `apps/scanner/src/cron_scan.ts` 中移除或过度压缩 WHOIS 延时。
+- **节流底线不可碰**：绝对不要绕过 `packages/core/src/scan-engine.ts` 中 2000ms 的 WHOIS 延时下限；CLI 和定时扫描 adapter 不得重新实现该逻辑。
