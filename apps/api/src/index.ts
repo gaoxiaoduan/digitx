@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { DomainDatabase } from '@digitx/core';
+import type { DomainDatabase } from '@digitx/core';
+import { createEmptyDomainDatabase } from '@digitx/core/candidate-contract';
 
 type Bindings = {
   DIGITX_KV: KVNamespace;
@@ -16,16 +17,12 @@ app.get('/api/domains', async (c) => {
   try {
     const raw = await c.env.DIGITX_KV.get('domains_db');
     if (!raw) {
-      return c.json({
-        domains: {},
-        stats: { total: 0, checked: 0, unchecked: 0, available: 0, registered: 0, error: 0 },
-        config: { delay: 2000, exclude4: true, minLength: 6, maxLength: 8, minScore: 60, tld: '.xyz' }
-      } as DomainDatabase);
+      return c.json(createEmptyDomainDatabase());
     }
     const data: DomainDatabase = JSON.parse(raw);
     return c.json(data);
-  } catch (err: any) {
-    return c.json({ error: 'Failed to read domain data', message: err.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: 'Failed to read domain data', message: errorMessage(error) }, 500);
   }
 });
 
@@ -38,8 +35,8 @@ app.get('/api/status', async (c) => {
     }
     const data: DomainDatabase = JSON.parse(raw);
     return c.json(data.stats);
-  } catch (err: any) {
-    return c.json({ error: 'Failed to read stats', message: err.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: 'Failed to read stats', message: errorMessage(error) }, 500);
   }
 });
 
@@ -60,9 +57,13 @@ app.post('/api/sync', async (c) => {
 
     await c.env.DIGITX_KV.put('domains_db', JSON.stringify(payload));
     return c.json({ success: true, timestamp: new Date().toISOString(), stats: payload.stats });
-  } catch (err: any) {
-    return c.json({ error: 'Failed to save to KV', message: err.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: 'Failed to save to KV', message: errorMessage(error) }, 500);
   }
 });
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 export default app;

@@ -1,14 +1,29 @@
 export type CheckStatus = 'unchecked' | 'checking' | 'available' | 'registered' | 'error';
 
-export type PatternType = string;
+export type PrimaryCategory =
+  | '极品结构号'
+  | '吉祥寓意号'
+  | '极客神号'
+  | '大众记忆号'
+  | '纪念日期号'
+  | '城市名片号';
+
 export type DomainScore = number;
+
+export interface ScoreContribution {
+  id: string;
+  label: string;
+  points: number;
+}
 
 export interface DomainRecord {
   domain: string;
   number: string;
   score: DomainScore;
-  category: PatternType;
+  category: PrimaryCategory;
   patternDesc: string;
+  tags?: string[];
+  scoreBreakdown?: ScoreContribution[];
   status: CheckStatus;
   detail: string;
   updatedAt: string | null;
@@ -25,24 +40,21 @@ export interface DomainStats {
 
 export interface GeneratorConfig {
   delay: number;
-  exclude4: boolean;
-  minLength: number;
-  maxLength: number;
   minScore: number;
   tld: string;
 }
 
 export interface GeneratorOptions {
-  minLength?: number;
-  maxLength?: number;
-  excludeUnlucky4?: boolean;
   minScore?: number;
   tld?: string;
 }
 
 export interface EvaluationResult {
+  eligible: boolean;
   score: DomainScore;
-  category: PatternType;
+  category: PrimaryCategory | null;
+  tags: string[];
+  scoreBreakdown: ScoreContribution[];
   patternDesc: string;
 }
 
@@ -52,6 +64,7 @@ export interface CityInfo {
 }
 
 export interface DomainDatabase {
+  generatorVersion?: string;
   domains: Record<string, DomainRecord>;
   stats: DomainStats;
   config: GeneratorConfig;

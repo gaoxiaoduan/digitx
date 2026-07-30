@@ -1,9 +1,8 @@
 import React from 'react';
-import { EyeOff, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { type Locale, copy } from '@/lib/copy';
 
@@ -15,8 +14,6 @@ interface FilterBarProps {
   setSelectedLength: (value: string) => void;
   selectedCategory: string;
   setSelectedCategory: (value: string) => void;
-  excludeFour: boolean;
-  setExcludeFour: (value: boolean) => void;
   statusFilter: string;
   setStatusFilter: (value: string) => void;
   categories: string[];
@@ -30,8 +27,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   setSelectedLength,
   selectedCategory,
   setSelectedCategory,
-  excludeFour,
-  setExcludeFour,
   statusFilter,
   setStatusFilter,
   categories
@@ -109,14 +104,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               </SelectContent>
             </Select>
           </div>
-
-          <label className="flex h-10 shrink-0 cursor-pointer items-center justify-between gap-3 rounded-md border bg-background px-3 text-sm text-muted-foreground sm:min-w-40">
-            <span className="flex items-center gap-2">
-              <EyeOff className="size-4" />
-              {text.avoidFour}
-            </span>
-            <Switch checked={excludeFour} onCheckedChange={setExcludeFour} aria-label={text.avoidFour} />
-          </label>
         </div>
       </CardContent>
     </Card>

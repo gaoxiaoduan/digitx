@@ -1,5 +1,6 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { DomainDatabase, DomainRecord } from '@digitx/core';
+import type { DomainDatabase, DomainRecord } from '@digitx/core';
+import { createEmptyDomainDatabase } from '@digitx/core/candidate-contract';
 import { Code2, Moon, RefreshCw, Sun } from 'lucide-react';
 import { DetailSheet } from '@/components/DetailSheet';
 import { DomainTable } from '@/components/DomainTable';
@@ -12,11 +13,7 @@ import { copy, type Locale } from '@/lib/copy';
 
 type Theme = 'light' | 'dark';
 
-const EMPTY_DATABASE: DomainDatabase = {
-  domains: {},
-  stats: { total: 0, checked: 0, unchecked: 0, available: 0, registered: 0, error: 0 },
-  config: { delay: 2000, exclude4: true, minLength: 6, maxLength: 8, minScore: 60, tld: '.xyz' }
-};
+const EMPTY_DATABASE = createEmptyDomainDatabase();
 
 const API_ORIGIN = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? '';
 const DOMAINS_ENDPOINT = `${API_ORIGIN}/api/domains`;
@@ -39,7 +36,6 @@ export const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLength, setSelectedLength] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [excludeFour, setExcludeFour] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -49,7 +45,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [deferredSearchTerm, statusFilter, selectedLength, selectedCategory, excludeFour]);
+  }, [deferredSearchTerm, statusFilter, selectedLength, selectedCategory]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -95,7 +91,8 @@ export const App: React.FC = () => {
         if (
           deferredSearchTerm &&
           !domain.domain.includes(deferredSearchTerm) &&
-          !domain.patternDesc.includes(deferredSearchTerm)
+          !domain.patternDesc.includes(deferredSearchTerm) &&
+          !(domain.tags ?? []).some((tag) => tag.includes(deferredSearchTerm))
         ) {
           return false;
         }
@@ -103,14 +100,9 @@ export const App: React.FC = () => {
         if (selectedLength !== 'all' && String(domain.number.length) !== selectedLength) return false;
         if (selectedCategory !== 'all' && domain.category !== selectedCategory) return false;
 
-        if (excludeFour && domain.number.includes('4')) {
-          const allowedPatterns = ['1024', '2048', '4096', '404'];
-          if (!allowedPatterns.some((pattern) => domain.number.includes(pattern))) return false;
-        }
-
         return true;
       }),
-    [deferredSearchTerm, domainList, excludeFour, selectedCategory, selectedLength, statusFilter]
+    [deferredSearchTerm, domainList, selectedCategory, selectedLength, statusFilter]
   );
 
   const toggleTheme = () => setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'));
@@ -196,8 +188,6 @@ export const App: React.FC = () => {
             setSelectedLength={setSelectedLength}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
-            excludeFour={excludeFour}
-            setExcludeFour={setExcludeFour}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
             categories={categories}

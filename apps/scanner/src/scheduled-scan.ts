@@ -1,12 +1,14 @@
 import path from 'node:path';
 import {
+  DEFAULT_MIN_SCORE,
+  GENERATOR_VERSION,
   createConsoleProgressAdapter,
   createFileCheckpointAdapter,
   generateCandidates,
   nodeDNSAdapter,
   nodeTimingAdapter,
   nodeWHOISAdapter,
-  recalculateStats,
+  reconcileCandidateDatabase,
   runScanBatch,
   type DomainDatabase,
   type DomainRecord,
@@ -32,7 +34,12 @@ export interface ScheduledScanOptions {
 export async function runScheduledScan(options: ScheduledScanOptions): Promise<ScanOutcome> {
   const log = options.log ?? console.log;
   const checkpoint = await loadRemoteCheckpoint(options.apiUrl, options.fetch ?? globalThis.fetch);
-  const database = checkpoint ?? createInitialDatabase(options.maxCandidates, options.generateCandidates ?? generateCandidates, log);
+  const database = prepareCandidateDatabase(
+    checkpoint,
+    options.maxCandidates,
+    options.generateCandidates ?? generateCandidates,
+    log
+  );
   log(`Starting scan batch. Total domains: ${database.stats.total}, Unchecked: ${database.stats.unchecked}`);
   const dependencies = options.scanDependencies ?? createProductionDependencies(options.databasePath, log);
   const outcome = await runScanBatch(
@@ -73,38 +80,34 @@ export async function loadRemoteCheckpoint(apiUrl: string, fetchImplementation: 
   return Object.keys(payload.domains).length === 0 ? null : payload;
 }
 
-function createInitialDatabase(
+function prepareCandidateDatabase(
+  checkpoint: DomainDatabase | null,
   maxCandidates: number | undefined,
   candidateGenerator: CandidateGenerator,
   log: (message: string) => void
 ): DomainDatabase {
-  log('No remote checkpoint found; generating initial Numeric Domain candidates.');
+  if (checkpoint?.generatorVersion === GENERATOR_VERSION) {
+    return checkpoint;
+  }
+
+  log(
+    checkpoint
+      ? `Candidate generator changed from ${checkpoint.generatorVersion ?? 'legacy'} to ${GENERATOR_VERSION}; reconciling scan state.`
+      : 'No remote checkpoint found; generating initial Numeric Domain candidates.'
+  );
+  const tld = checkpoint?.config.tld ?? '.xyz';
   const generatedCandidates = candidateGenerator({
-    minLength: 6,
-    maxLength: 8,
-    excludeUnlucky4: true,
-    minScore: 60,
-    tld: '.xyz'
+    minScore: DEFAULT_MIN_SCORE,
+    tld
   });
   const candidates = generatedCandidates.slice(0, maxCandidates ?? Number.MAX_SAFE_INTEGER);
 
-  const database: DomainDatabase = {
-    domains: {},
-    stats: { total: 0, checked: 0, unchecked: 0, available: 0, registered: 0, error: 0 },
-    config: { delay: 2000, exclude4: true, minLength: 6, maxLength: 8, minScore: 60, tld: '.xyz' }
-  };
-
-  for (const candidate of candidates) {
-    database.domains[candidate.domain] = {
-      ...candidate,
-      status: 'unchecked',
-      detail: '',
-      updatedAt: null
-    };
-  }
-
-  recalculateStats(database);
-  return database;
+  return reconcileCandidateDatabase(checkpoint, candidates, {
+    generatorVersion: GENERATOR_VERSION,
+    delay: checkpoint?.config.delay ?? 2000,
+    minScore: DEFAULT_MIN_SCORE,
+    tld
+  });
 }
 
 function createProductionDependencies(databasePath: string | undefined, log: (message: string) => void): ScanDependencies {
@@ -145,6 +148,7 @@ async function syncToCloudflare(
 
 function isDomainDatabase(value: unknown): value is DomainDatabase {
   if (!isRecord(value) || !isRecord(value.domains) || !isStats(value.stats) || !isConfig(value.config)) return false;
+  if (value.generatorVersion !== undefined && typeof value.generatorVersion !== 'string') return false;
   return Object.values(value.domains).every(isDomainRecord);
 }
 
@@ -156,6 +160,9 @@ function isDomainRecord(value: unknown): value is DomainRecord {
     typeof value.score === 'number' &&
     typeof value.category === 'string' &&
     typeof value.patternDesc === 'string' &&
+    (value.tags === undefined || (Array.isArray(value.tags) && value.tags.every((tag) => typeof tag === 'string'))) &&
+    (value.scoreBreakdown === undefined ||
+      (Array.isArray(value.scoreBreakdown) && value.scoreBreakdown.every(isScoreContribution))) &&
     ['unchecked', 'checking', 'available', 'registered', 'error'].includes(String(value.status)) &&
     typeof value.detail === 'string' &&
     (typeof value.updatedAt === 'string' || value.updatedAt === null)
@@ -170,11 +177,17 @@ function isConfig(value: unknown): boolean {
   return (
     isRecord(value) &&
     typeof value.delay === 'number' &&
-    typeof value.exclude4 === 'boolean' &&
-    typeof value.minLength === 'number' &&
-    typeof value.maxLength === 'number' &&
     typeof value.minScore === 'number' &&
     typeof value.tld === 'string'
+  );
+}
+
+function isScoreContribution(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.label === 'string' &&
+    typeof value.points === 'number'
   );
 }
 

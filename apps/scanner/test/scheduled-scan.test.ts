@@ -4,7 +4,7 @@ import {
   runScheduledScan,
   type ScheduledScanOptions
 } from '../src/scheduled-scan.js';
-import type { DomainDatabase } from '@digitx/core';
+import { GENERATOR_VERSION, type DomainDatabase } from '@digitx/core';
 
 function databaseWith(...domains: string[]): DomainDatabase {
   const records = Object.fromEntries(
@@ -14,7 +14,7 @@ function databaseWith(...domains: string[]): DomainDatabase {
         domain,
         number: domain.replace(/\.xyz$/, ''),
         score: 90,
-        category: '测试号码',
+        category: '极品结构号',
         patternDesc: '测试 Numeric Domain',
         status: 'unchecked' as const,
         detail: '',
@@ -24,9 +24,10 @@ function databaseWith(...domains: string[]): DomainDatabase {
   );
 
   return {
+    generatorVersion: GENERATOR_VERSION,
     domains: records,
     stats: { total: domains.length, checked: 0, unchecked: domains.length, available: 0, registered: 0, error: 0 },
-    config: { delay: 2000, exclude4: true, minLength: 6, maxLength: 8, minScore: 60, tld: '.xyz' }
+    config: { delay: 2000, minScore: 85, tld: '.xyz' }
   };
 }
 
@@ -70,6 +71,9 @@ test('连续 Scheduled Scan 仅继续处理远端检查点中仍为 unchecked �
       timing: { sleep: async () => undefined },
       checkpoint: { save: async () => undefined }
     },
+    generateCandidates: () => {
+      throw new Error('matching generator version must resume without regeneration');
+    },
     log: () => undefined
   };
 
@@ -104,8 +108,10 @@ test('KV 没有有效检查点时生成初始 Numeric Domain 并同步结果', a
         domain: '888888.xyz',
         number: '888888',
         score: 100,
-        category: '至尊连号豹子',
-        patternDesc: '测试 Numeric Domain'
+        category: '极品结构号',
+        patternDesc: '测试 Numeric Domain',
+        tags: ['纯重复'],
+        scoreBreakdown: [{ id: 'pure-repeat', label: '纯重复结构', points: 94 }]
       }
     ],
     scanDependencies: {
@@ -120,6 +126,69 @@ test('KV 没有有效检查点时生成初始 Numeric Domain 并同步结果', a
   assert.equal(synchronized.length, 1);
   assert.equal(synchronized[0].domains['888888.xyz'].status, 'available');
   assert.equal(synchronized[0].stats.checked, 1);
+});
+
+test('生成规则版本变化时先协调候选集，再继续扫描并同步', async () => {
+  const remote = databaseWith('888888.xyz', '274472.xyz');
+  remote.generatorVersion = '1.0.0';
+  remote.domains['888888.xyz'].status = 'available';
+  remote.domains['888888.xyz'].detail = 'Available from old scan';
+  remote.domains['888888.xyz'].updatedAt = '2026-07-01T00:00:00.000Z';
+  remote.domains['274472.xyz'].status = 'available';
+
+  let generatorCalls = 0;
+  let synchronized: DomainDatabase | null = null;
+  const fetch = async (_input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    if (init?.method === 'POST') {
+      synchronized = JSON.parse(String(init.body)) as DomainDatabase;
+      return new Response(JSON.stringify({ success: true }), { status: 200 });
+    }
+    return new Response(JSON.stringify(remote), { status: 200 });
+  };
+
+  await runScheduledScan({
+    apiUrl: 'https://api.example.com',
+    syncSecret: 'secret',
+    fetch,
+    generateCandidates: () => {
+      generatorCalls += 1;
+      return [
+        {
+          domain: '888888.xyz',
+          number: '888888',
+          score: 100,
+          category: '极品结构号',
+          patternDesc: '纯重复',
+          tags: ['纯重复'],
+          scoreBreakdown: [{ id: 'pure-repeat', label: '纯重复结构', points: 94 }]
+        },
+        {
+          domain: '444444.xyz',
+          number: '444444',
+          score: 98,
+          category: '极品结构号',
+          patternDesc: '纯重复',
+          tags: ['纯重复'],
+          scoreBreakdown: [{ id: 'pure-repeat', label: '纯重复结构', points: 92 }]
+        }
+      ];
+    },
+    scanDependencies: {
+      dns: { isRegistered: async () => true },
+      whois: { verify: async () => ({ registered: false, detail: 'unused' }) },
+      timing: { sleep: async () => undefined },
+      checkpoint: { save: async () => undefined }
+    },
+    log: () => undefined
+  });
+
+  assert.equal(generatorCalls, 1);
+  assert.ok(synchronized);
+  assert.equal(synchronized.generatorVersion, GENERATOR_VERSION);
+  assert.deepEqual(Object.keys(synchronized.domains).sort(), ['444444.xyz', '888888.xyz']);
+  assert.equal(synchronized.domains['888888.xyz'].status, 'available');
+  assert.equal(synchronized.domains['888888.xyz'].detail, 'Available from old scan');
+  assert.equal(synchronized.domains['444444.xyz'].status, 'registered');
 });
 
 test('无法读取远端检查点时中止扫描，且绝不以空数据同步覆盖 KV', async () => {

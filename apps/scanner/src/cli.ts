@@ -5,12 +5,16 @@ import ora from 'ora';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  DEFAULT_MIN_SCORE,
+  GENERATOR_VERSION,
+  createEmptyDomainDatabase,
   createFileCheckpointAdapter,
   generateCandidates,
   nodeDNSAdapter,
   nodeTimingAdapter,
   nodeWHOISAdapter,
   recalculateStats,
+  reconcileCandidateDatabase,
   runScanBatch,
   type DomainDatabase
 } from '@digitx/core';
@@ -20,16 +24,18 @@ const DB_PATH = path.resolve(process.cwd(), 'domains_db.json');
 function loadDB(): DomainDatabase {
   if (fs.existsSync(DB_PATH)) {
     try {
-      return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+      const checkpoint = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8')) as DomainDatabase;
+      if (checkpoint.generatorVersion === GENERATOR_VERSION) return checkpoint;
+      return reconcileCandidateDatabase(
+        checkpoint,
+        generateCandidates({ minScore: DEFAULT_MIN_SCORE, tld: checkpoint.config.tld }),
+        { delay: checkpoint.config.delay, minScore: DEFAULT_MIN_SCORE, tld: checkpoint.config.tld }
+      );
     } catch {
       // Fallback
     }
   }
-  return {
-    domains: {},
-    stats: { total: 0, checked: 0, unchecked: 0, available: 0, registered: 0, error: 0 },
-    config: { delay: 2000, exclude4: true, minLength: 6, maxLength: 8, minScore: 60, tld: '.xyz' }
-  };
+  return createEmptyDomainDatabase();
 }
 
 function saveDB(db: DomainDatabase) {
@@ -47,7 +53,7 @@ async function main() {
     })
   );
 
-  const db = loadDB();
+  let db = loadDB();
   console.log(chalk.gray(`Loaded ${db.stats.total} total domains. Available: ${chalk.green(db.stats.available)}`));
 
   const { action } = await inquirer.prompt([
@@ -67,21 +73,10 @@ async function main() {
   if (action === 'generate') {
     const spinner = ora('Generating numeric domain candidates...').start();
     const candidates = generateCandidates({
-      minLength: db.config.minLength,
-      maxLength: db.config.maxLength,
-      excludeUnlucky4: db.config.exclude4,
       minScore: db.config.minScore,
       tld: db.config.tld
     });
-    db.domains = {};
-    for (const cand of candidates) {
-      db.domains[cand.domain] = {
-        ...cand,
-        status: 'unchecked',
-        detail: '',
-        updatedAt: null
-      };
-    }
+    db = reconcileCandidateDatabase(db, candidates, db.config);
     saveDB(db);
     spinner.succeed(`Generated ${candidates.length} candidates! Saved to database.`);
   } else if (action === 'scan') {

@@ -10,10 +10,15 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./candidate-contract": {
+      "types": "./dist/candidate-contract.d.ts",
+      "import": "./dist/candidate-contract.mjs",
+      "require": "./dist/candidate-contract.js"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm && tsc --emitDeclarationOnly",
+    "build": "tsup src/index.ts src/candidate-contract.ts --format cjs,esm && tsc --emitDeclarationOnly",
     "test": "tsx --test test/**/*.test.ts",
     "check-types": "tsc --noEmit"
   },

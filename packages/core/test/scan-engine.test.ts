@@ -11,7 +11,7 @@ function databaseWith(...domains: string[]): DomainDatabase {
         domain,
         number: domain.replace(/\.xyz$/, ''),
         score: 90,
-        category: '测试号码',
+        category: '极品结构号',
         patternDesc: '测试 Numeric Domain',
         status: 'unchecked' as const,
         detail: '',
@@ -21,9 +21,10 @@ function databaseWith(...domains: string[]): DomainDatabase {
   );
 
   return {
+    generatorVersion: 'test',
     domains: records,
     stats: { total: domains.length, checked: 0, unchecked: domains.length, available: 0, registered: 0, error: 0 },
-    config: { delay: 2000, exclude4: true, minLength: 6, maxLength: 8, minScore: 60, tld: '.xyz' }
+    config: { delay: 2000, minScore: 85, tld: '.xyz' }
   };
 }
 

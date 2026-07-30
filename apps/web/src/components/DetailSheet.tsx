@@ -40,6 +40,31 @@ export const DetailSheet: React.FC<DetailSheetProps> = ({ locale, domain, onClos
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{domain.patternDesc}</p>
               </section>
 
+              {(domain.tags?.length ?? 0) > 0 ? (
+                <section className="flex flex-col gap-3">
+                  <p className="font-mono text-xs text-muted-foreground">{text.tags}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {domain.tags?.map((tag) => (
+                      <Badge key={tag} variant="outline">{tag}</Badge>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
+              {(domain.scoreBreakdown?.length ?? 0) > 0 ? (
+                <section className="flex flex-col gap-3">
+                  <p className="font-mono text-xs text-muted-foreground">{text.scoreBreakdown}</p>
+                  <dl className="flex flex-col divide-y rounded-lg border px-4">
+                    {domain.scoreBreakdown?.map((contribution) => (
+                      <div key={contribution.id} className="flex items-center justify-between gap-4 py-3 text-sm">
+                        <dt className="text-muted-foreground">{contribution.label}</dt>
+                        <dd className="font-mono font-medium text-foreground">+{contribution.points}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              ) : null}
+
               <dl className="flex flex-col divide-y border-y">
                 <div className="flex items-center justify-between gap-5 py-4">
                   <dt className="flex items-center gap-2 text-sm text-muted-foreground"><Tag className="size-4" />{text.pattern}</dt>
