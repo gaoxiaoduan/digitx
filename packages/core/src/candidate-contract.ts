@@ -1,9 +1,9 @@
 import type { DomainDatabase, GeneratorConfig } from './types.js';
 
-export const GENERATOR_VERSION = '2.0.0';
+export const GENERATOR_VERSION = '3.0.0';
 export const DEFAULT_MIN_SCORE = 85;
 export const MIN_SUPPORTED_SCORE = 80;
-export const MAX_CANDIDATES = 1000;
+export const MAX_CANDIDATES = 5000;
 
 export interface CandidateDatabaseOptions {
   generatorVersion?: string;

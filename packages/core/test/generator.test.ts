@@ -4,7 +4,10 @@ import {
   generateCandidates,
   evaluateNumber
 } from '../src/generator.js';
-import { GENERATOR_VERSION } from '../src/candidate-contract.js';
+import {
+  GENERATOR_VERSION,
+  MAX_CANDIDATES
+} from '../src/candidate-contract.js';
 
 test('Quality Score rewards brevity while keeping leading zero and digit four neutral', () => {
   const six = evaluateNumber('888888');
@@ -50,10 +53,10 @@ test('Candidate generation is curated, deterministic, bounded, and covers all si
   const numbers = new Set(first.map((candidate) => candidate.number));
   const categories = new Set(first.map((candidate) => candidate.category));
 
-  assert.match(GENERATOR_VERSION, /^\d+\.\d+\.\d+$/);
+  assert.equal(GENERATOR_VERSION, '3.0.0');
   assert.deepEqual(first, second);
   assert.ok(first.length > 0);
-  assert.ok(first.length <= 1000);
+  assert.ok(first.length < MAX_CANDIDATES);
   assert.ok(first.every((candidate) => candidate.number.length >= 6 && candidate.number.length <= 8));
   assert.ok(first.every((candidate) => candidate.score >= 85));
   assert.deepEqual(
@@ -77,6 +80,77 @@ test('Candidate generation is curated, deterministic, bounded, and covers all si
   assert.equal(numbers.has('123066'), true);
   assert.equal(numbers.has('1230666'), true);
   assert.equal(numbers.has('010999'), true);
+});
+
+test('Candidate Set includes every supported City Signature suffix form', () => {
+  const candidates = new Map(
+    generateCandidates().map((candidate) => [candidate.number, candidate])
+  );
+
+  for (const number of [
+    '010123',
+    '021789',
+    '028111',
+    '0755123',
+    '05719876',
+    '0101212',
+    '07551212'
+  ]) {
+    const candidate = candidates.get(number);
+    assert.ok(candidate, number);
+    assert.equal(candidate.category, '城市名片号', number);
+    assert.equal(candidate.score, evaluateNumber(number).score, number);
+    assert.equal(candidate.patternDesc, evaluateNumber(number).patternDesc, number);
+  }
+});
+
+test('Candidate Set includes supported Lucky Meaning mirrors and strict padding', () => {
+  const candidates = new Map(
+    generateCandidates().map((candidate) => [candidate.number, candidate])
+  );
+
+  for (const number of ['518815', '520025', '13144131', '520000', '000518', '999168']) {
+    const candidate = candidates.get(number);
+    const evaluation = evaluateNumber(number);
+    assert.ok(candidate, number);
+    assert.equal(candidate.category, '吉祥寓意号', number);
+    assert.equal(candidate.score, evaluation.score, number);
+    assert.deepEqual(candidate.tags, evaluation.tags, number);
+    assert.deepEqual(candidate.scoreBreakdown, evaluation.scoreBreakdown, number);
+  }
+});
+
+test('every supported rule family can contribute a representative Premium Candidate', () => {
+  const candidates = new Map(
+    generateCandidates({ minScore: 80 }).map((candidate) => [candidate.number, candidate])
+  );
+  const representatives = [
+    ['444444', '极品结构号'],
+    ['111110', '极品结构号'],
+    ['211111', '极品结构号'],
+    ['1111112', '极品结构号'],
+    ['012345', '极品结构号'],
+    ['111222', '极品结构号'],
+    ['11112222', '极品结构号'],
+    ['121212', '极品结构号'],
+    ['123321', '极品结构号'],
+    ['112233', '极品结构号'],
+    ['223344', '极品结构号'],
+    ['11223344', '极品结构号'],
+    ['123123', '极品结构号'],
+    ['518815', '吉祥寓意号'],
+    ['000404', '极客神号'],
+    ['000110', '大众记忆号'],
+    ['20200202', '纪念日期号'],
+    ['010123', '城市名片号']
+  ] as const;
+
+  for (const [number, category] of representatives) {
+    const candidate = candidates.get(number);
+    assert.ok(candidate, number);
+    assert.equal(candidate.category, category, number);
+    assert.equal(candidate.score, evaluateNumber(number).score, number);
+  }
 });
 
 test('Expansion mode starts at 80 while unsupported thresholds are rejected', () => {
