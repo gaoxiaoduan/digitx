@@ -1,7 +1,7 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import type { DomainDatabase, DomainRecord } from '@digitx/core';
 import { createEmptyDomainDatabase } from '@digitx/core/candidate-contract';
-import { Code2, Moon, RefreshCw, Sun } from 'lucide-react';
+import { Github, Moon, RefreshCw, Sun } from 'lucide-react';
 import { DetailSheet } from '@/components/DetailSheet';
 import { DomainTable } from '@/components/DomainTable';
 import { FilterBar } from '@/components/FilterBar';
@@ -36,7 +36,7 @@ export const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLength, setSelectedLength] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('available');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [selectedDomain, setSelectedDomain] = useState<DomainRecord | null>(null);
@@ -167,7 +167,7 @@ export const App: React.FC = () => {
                       rel="noopener noreferrer"
                       aria-label={text.github}
                     >
-                      <Code2 />
+                      <Github />
                     </a>
                   </Button>
                 </TooltipTrigger>
@@ -190,6 +190,7 @@ export const App: React.FC = () => {
             setSelectedCategory={setSelectedCategory}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
+            statusCounts={data.stats}
             categories={categories}
           />
 

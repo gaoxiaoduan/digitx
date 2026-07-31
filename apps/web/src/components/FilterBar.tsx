@@ -5,6 +5,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { type Locale, copy } from '@/lib/copy';
+import type { DomainStats } from '@digitx/core';
 
 interface FilterBarProps {
   locale: Locale;
@@ -16,6 +17,7 @@ interface FilterBarProps {
   setSelectedCategory: (value: string) => void;
   statusFilter: string;
   setStatusFilter: (value: string) => void;
+  statusCounts: DomainStats;
   categories: string[];
 }
 
@@ -29,6 +31,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   setSelectedCategory,
   statusFilter,
   setStatusFilter,
+  statusCounts,
   categories
 }) => {
   const text = copy[locale];
@@ -66,9 +69,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             aria-label={text.status}
             className="self-start lg:self-auto"
           >
-            <ToggleGroupItem value="all">{text.status}</ToggleGroupItem>
-            <ToggleGroupItem value="available">{text.available}</ToggleGroupItem>
-            <ToggleGroupItem value="registered">{text.registered}</ToggleGroupItem>
+            <ToggleGroupItem value="available">
+              {text.available} <span className="ml-1 font-mono tabular-nums text-muted-foreground">{statusCounts.available}</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="registered">
+              {text.registered} <span className="ml-1 font-mono tabular-nums text-muted-foreground">{statusCounts.registered}</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="all">
+              {text.allStatuses} <span className="ml-1 font-mono tabular-nums text-muted-foreground">{statusCounts.total}</span>
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
 
